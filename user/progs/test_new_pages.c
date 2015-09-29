@@ -1,15 +1,16 @@
 #include<syscall.h>
 #include<simics.h>
-#include<string.h>
+    #include<string.h>
+#include<stdlib.h>
 int main()
 {
-	/*void * base = (void*)0xffffcff0;
+	void * base = (void*)0xffffc000;
 	int c = new_pages(base,PAGE_SIZE);
-	lprintf("Added a new page %d and %s \n",c,strerror(c));
-
-	int d = remove_pages(base);
-	lprintf("removed a new page %d and %s \n",d,strerror(d));
+	lprintf("Added a new page %d \n",c);
 	
-	task_vanish(100);*/
+	int d = remove_pages(base);
+	lprintf("Removed a new page %d \n",d);
+	
+	exit(100);
 	return 0;
 }
