@@ -98,7 +98,7 @@ STUDENTTESTS = test test_fork test_new_pages
 ###########################################################################
 # Object files for your thread library
 ###########################################################################
-THREAD_OBJS = malloc.o panic.o
+THREAD_OBJS = malloc.o panic.o mutex_main.o
 
 # Thread Group Library Support.
 #
