@@ -7,6 +7,6 @@
 .globl vanish
 
 vanish:
-  call sim_breakpoint
+  //call sim_breakpoint
   int $VANISH_INT
   ret

@@ -3,7 +3,14 @@
  * instead.
  */
 
+#include<thr_internals.h>
+
+void * stack_high_ptr;
+void * stack_low_ptr;
+
 void
 install_autostack(void *stack_high, void *stack_low)
 {
+	stack_high_ptr = stack_high;
+	stack_low_ptr = stack_low;
 }
