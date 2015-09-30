@@ -42,3 +42,6 @@ temp/*
 .md5s
 *.dep
 *.gz
+kernel
+kernel.log
+user/progs/*
