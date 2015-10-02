@@ -85,7 +85,7 @@ UPDATE_METHOD = afs
 # A list of the test programs you want compiled in from the 410user/progs
 # directory
 #
-410TESTS = startle actual_wait thr_exit_join
+410TESTS = startle actual_wait thr_exit_join stack_test1 cyclone join_specific_test
 
 ###########################################################################
 # Test programs you have written which you wish to run
@@ -93,12 +93,12 @@ UPDATE_METHOD = afs
 # A list of the test programs you want compiled in from the user/progs
 # directory
 #
-STUDENTTESTS = test test_fork test_new_pages test_thread_fork test_thread_create
+STUDENTTESTS = test test_fork test_new_pages test_thread_fork test_thread_create cyclone_usr
 
 ###########################################################################
 # Object files for your thread library
 ###########################################################################
-THREAD_OBJS = malloc.o panic.o thread_fork.o thread_library_main.o
+THREAD_OBJS = malloc.o panic.o thread_fork.o thread_library_main.o compAndXchg.o
 
 # Thread Group Library Support.
 #
@@ -114,10 +114,10 @@ THREAD_OBJS = malloc.o panic.o thread_fork.o thread_library_main.o
 SYSCALL_OBJS = syscall.o set_status.o vanish.o print.o getchar.o set_term_color.o \
 			   set_cursor_pos.o get_cursor_pos.o readline.o task_vanish.o wait.o exec.o fork.o \
 			   gettid.o yield.o deschedule.o make_runnable.o get_ticks.o sleep.o new_pages.o \
-			   remove_pages.o
+			   remove_pages.o swexn.o misbehave.o
 
 ###########################################################################
 # Object files for your automatic stack handling
 ###########################################################################
-AUTOSTACK_OBJS = autostack.o
+AUTOSTACK_OBJS = autostack.o resume_thread.o
 

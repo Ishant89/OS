@@ -24,6 +24,7 @@ thread_fork:
   jne label
   movl %ecx,%esp
   popl %ebp
+  lea 0x8(%ebp),%ebp
   ret
   label: 
 		leave
