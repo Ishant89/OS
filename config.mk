@@ -85,7 +85,8 @@ UPDATE_METHOD = afs
 # A list of the test programs you want compiled in from the 410user/progs
 # directory
 #
-410TESTS = startle actual_wait thr_exit_join cyclone
+410TESTS = startle actual_wait thr_exit_join stack_test1 cyclone join_specific_test \
+	mutex_destroy_test juggle
 
 ###########################################################################
 # Test programs you have written which you wish to run
@@ -118,10 +119,10 @@ THREAD_OBJS = malloc.o panic.o thread_fork.o thread_library_main.o mutex_main.o 
 SYSCALL_OBJS = syscall.o set_status.o vanish.o print.o getchar.o set_term_color.o \
 			   set_cursor_pos.o get_cursor_pos.o readline.o task_vanish.o wait.o exec.o fork.o \
 			   gettid.o yield.o deschedule.o make_runnable.o get_ticks.o sleep.o new_pages.o \
-			   remove_pages.o misbehave.o
+			   remove_pages.o swexn.o misbehave.o
 
 ###########################################################################
 # Object files for your automatic stack handling
 ###########################################################################
-AUTOSTACK_OBJS = autostack.o
+AUTOSTACK_OBJS = autostack.o resume_thread.o
 

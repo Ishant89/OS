@@ -79,10 +79,10 @@ int sleep(int ticks)
 	return -1;
 }*/
 
-int swexn(void *esp3, swexn_handler_t eip, void *arg, ureg_t *newureg)
+/*int swexn(void *esp3, swexn_handler_t eip, void *arg, ureg_t *newureg)
 {
 	return -1;
-}
+}*/
 
 /*char getchar(void)
 {
@@ -153,7 +153,7 @@ unsigned int get_ticks()
 	return 1;
 }*/
 
-void misbehave(int mode)
+/*void misbehave(int mode)
 {
 	return;
-}
+}*/

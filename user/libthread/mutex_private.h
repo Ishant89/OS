@@ -26,6 +26,9 @@
 #include<syscall.h>
 #include<mutex_type.h>
 #include<thread.h>
+#include<contracts.h>
+/*EDIT:To be removed*/
+#include<simics.h>
 
 /** @brief Pass/Fail */
 #define PASS 0
@@ -33,7 +36,7 @@
 
 /** @brief Get the mutex id from the structure */
 
-#define GET_MUTEX_ID(mp) (mp->mutex_id)
+#define GET_MUTEX_ID(mp) ((unsigned int)(&(mp->mutex_id)))
 
 typedef struct thread_queue 
 {
@@ -66,4 +69,5 @@ typedef struct mutex_thread_object
 
 mutex_thread_object * head_mutex_object = NULL;
 
+int compAndXchg(void *,int,int);
 

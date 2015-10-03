@@ -179,7 +179,7 @@ int main( int argc, char *argv[] ) {
         thr_exit((void *)1);
     }
     thrgrp_init_group(&tg);
-    mtxs = (mutex_t *)calloc(n_mutexes, sizeof(mutex_t));
+    mtxs = (mutex_t *)_calloc(n_mutexes, sizeof(mutex_t));
     for (i = 0; i < n_mutexes; i++) {
         assert(mutex_init(&(mtxs[i])) == 0);
     }
@@ -189,7 +189,7 @@ int main( int argc, char *argv[] ) {
     for (i = 0; i < n_chasethreads; i++) {
         assert(thrgrp_join(&tg, &status_temporary) == 0);
     }
-	free(mtxs);
+	_free(mtxs);
     REPORT_END_SUCCESS; 
     thr_exit((void *)0);
     exit(99);
