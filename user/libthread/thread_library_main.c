@@ -15,7 +15,7 @@
  *
  *	@bug 
  */
-
+#define DEBUG 0
 #include<thr_internals.h>
 #include "thr_private.h"
 #include <thread.h>
@@ -40,7 +40,7 @@ int thr_init(unsigned int size)
 
 	tcb_lock = 0;
 	/* Allocate parent TCB */
-	void * tcb_mem = _calloc(1,TCB_SIZE);
+	void * tcb_mem = calloc(1,TCB_SIZE);
 
 	tcb name = (tcb) tcb_mem;
 	/* EDIT: name-> sp, name->func, name->arg and name->waiter to be decided */
@@ -74,7 +74,7 @@ int thr_create( func handler, void * arg )
 	/* Create stack for the thread */
 	/*EDIT: Replace 1 with macro */
 	
-	void * stack_tcb_mem = _calloc(1,(stack_size + TCB_SIZE + STACK_BUFFER));
+	void * stack_tcb_mem = calloc(1,(stack_size + TCB_SIZE + STACK_BUFFER));
 
 	if(stack_tcb_mem == NULL)
 	{
@@ -157,7 +157,7 @@ int thr_join( int tid, void **statusp)
 		remove_tcb_from_list(child);
 		print_tcb_list();
 		child -> lock_available = 0;
-		_free(child);
+		free(child);
 		SIPRINTF("Exiting join  with success without wait and tid: %d",tid);
 		return 0;
 	}
@@ -176,7 +176,7 @@ int thr_join( int tid, void **statusp)
 		remove_tcb_from_list(child);
 		print_tcb_list();
 		child -> lock_available = 0;
-		_free(child);
+		free(child);
 		SIPRINTF("Exiting join with success with wait and tid: %d",tid);
 		return 0;
 
@@ -255,7 +255,7 @@ void remove_tcb_from_list(tcb entry)
 	}
 
 	if(prev)
-		prev -> next = temp;
+		prev -> next = temp -> next;
 	else
 		tcb_head = temp -> next;
 
@@ -330,7 +330,7 @@ int check_if_pid_exists_tcb(int tid)
 
 void push_children(children_list **head,tcb child)
 {
-	children_list *tl = _calloc(1,sizeof(children_list));
+	children_list *tl = calloc(1,sizeof(children_list));
 	tl -> next = *head;
 	tl -> name = child;
 	*head = tl;
@@ -361,7 +361,7 @@ void free_child_thread_list(children_list * head)
 	while(head)
 	{
 		next = head -> next;
-		_free(head);
+		free(head);
 		head = next;
 	}
 }
@@ -373,5 +373,5 @@ void freeThread(tcb thread)
   }
 
   free_child_thread_list(thread->children);
-  _free(thread);
+  free(thread);
 }

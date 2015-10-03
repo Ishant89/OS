@@ -17,6 +17,7 @@
 
 
 /*EDIT: MAKE MALLOC SAFE*/
+#define DEBUG 0
 #include "mutex_private.h"
 
 void debug_mutex_structure()
@@ -225,7 +226,7 @@ int mutex_init(mutex_t * mp)
 	unsigned int mutex_id = GET_MUTEX_ID(mp);
 	/* Assign a mutex object */
 	mutex_thread_object * mutex_obj = (mutex_thread_object*)
-		_malloc(sizeof(mutex_thread_object));
+		malloc(sizeof(mutex_thread_object));
 
 	if (mutex_obj == NULL)
 		return FAIL;
@@ -290,7 +291,7 @@ void mutex_lock(mutex_t * mp)
 
 	/* Create a thread structure to be added to head_queue */
 	thread_queue * new_thread_request = 
-		(thread_queue*) _malloc(sizeof(thread_queue));
+		(thread_queue*) malloc(sizeof(thread_queue));
 	new_thread_request->thread_id = thread_id;
 	new_thread_request->next_thread_id = NULL;
 		
@@ -399,7 +400,7 @@ void mutex_unlock(mutex_t *mp)
 	/*EDIT: To be removed */
 	//debug_mutex_structure();
 	/* Free the temp thread queue entry for the popped entry*/
-	_free(temp);
+	free(temp);
 	
 }
 
@@ -454,11 +455,11 @@ void mutex_destroy(mutex_t *mp)
 	
 	/* Mostly head_queue should be null here */
 	if (mutex_identifier->head_queue != NULL)
-		_free(mutex_identifier->head_queue);
+		free(mutex_identifier->head_queue);
 
 
 	/* Remove the mutex object */
-	_free(mutex_identifier);
+	free(mutex_identifier);
 	/*EDIT: To be removed */
 	//debug_mutex_structure();
 }
