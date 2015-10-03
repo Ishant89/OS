@@ -70,7 +70,7 @@ typedef void *(*func)(void*) ;
 
 int thr_create( func handler, void * arg )
 {
-	lprintf("Entering thr create");
+	//lprintf("Entering thr create");
 	/* Create stack for the thread */
 	/*EDIT: Replace 1 with macro */
 	
@@ -100,12 +100,12 @@ int thr_create( func handler, void * arg )
 	/* If child call the handler */
 	if (!pid)
 	{
-		int my_pid = gettid();
-		lprintf("In thr_create and in child :%d",my_pid);
+		//int my_pid = gettid();
+		//lprintf("In thr_create and in child :%d",my_pid);
 		int status;
-		while(!(status = check_if_pid_exists_tcb(my_pid)))
+		while(!(status = check_if_pid_exists_tcb(gettid())))
 		{
-	    lprintf("In thr_create : Child TCB found status %d",!status);
+	    //lprintf("In thr_create : Child TCB found status %d",!status);
 			yield(-1);
 		}
 		int result = (int)name->func(name->arg);
@@ -115,8 +115,8 @@ int thr_create( func handler, void * arg )
 	name->kid = pid;
 	name->tid = pid;
 	insert_tcb_list(name);
-	print_tcb_list();
-	lprintf("Exting thr_creat with Success : Done creating thread: %d",pid);
+	//print_tcb_list();
+	//lprintf("Exting thr_creat with Success : Done creating thread: %d",pid);
 	return pid;
 }
 
@@ -136,7 +136,7 @@ void print_tcb_list()
 
 int thr_join( int tid, void **statusp)
 {
-	lprintf("Entring join with tid: %d",tid);
+	//lprintf("Entring join with tid: %d",tid);
 
 	int reject = 0;
 
@@ -155,10 +155,10 @@ int thr_join( int tid, void **statusp)
 		if(statusp != NULL)
 		 *statusp = child -> exit_status;
 		remove_tcb_from_list(child);
-		print_tcb_list();
+		//print_tcb_list();
 		child -> lock_available = 0;
 		_free(child);
-		lprintf("Exiting join  with success without wait and tid: %d",tid);
+		//lprintf("Exiting join  with success without wait and tid: %d",tid);
 		return 0;
 	}
 
@@ -174,10 +174,10 @@ int thr_join( int tid, void **statusp)
 		if(statusp != NULL)
 		 *statusp = child -> exit_status;
 		remove_tcb_from_list(child);
-		print_tcb_list();
+		//print_tcb_list();
 		child -> lock_available = 0;
 		_free(child);
-		lprintf("Exiting join with success with wait and tid: %d",tid);
+		//lprintf("Exiting join with success with wait and tid: %d",tid);
 		return 0;
 
 	}
@@ -189,7 +189,7 @@ void thr_exit( void *status )
 
 	tcb current = get_tcb_from_kid(gettid());
 
-	lprintf("Entring exit with tid: %d",current->tid);
+	//lprintf("Entring exit with tid: %d",current->tid);
 
 	while(compAndXchg((void *)&(current -> lock_available),0,1));
 
@@ -198,13 +198,13 @@ void thr_exit( void *status )
 	if(current -> waiter != -1)
 	{
 		while(make_runnable(current -> waiter) < 0);
-		lprintf("Made runnable %d by %d",current -> waiter,current -> tid);
+		//lprintf("Made runnable %d by %d",current -> waiter,current -> tid);
 	}
 
 	else
 		setDone(current);
 
-	lprintf("Exiting thr_exit with tid is : %d",current -> tid);
+	//lprintf("Exiting thr_exit with tid is : %d",current -> tid);
 
 	current -> lock_available = 0;
 
@@ -255,7 +255,7 @@ void remove_tcb_from_list(tcb entry)
 	}
 
 	if(prev)
-		prev -> next = temp;
+		prev -> next = temp->next;
 	else
 		tcb_head = temp -> next;
 
@@ -309,11 +309,11 @@ int check_if_pid_exists_tcb(int tid)
 {
 	while(compAndXchg((void *)&(tcb_lock),0,1));
 	tcb temp = tcb_head;
-	lprintf("Searching TCB from Head :%p",temp);
+	//lprintf("Searching TCB from Head :%p",temp);
 	while(temp != NULL)
 	{
 
-		lprintf("Temp id: %d True id %d",temp->tid,tid);
+		//lprintf("Temp id: %d True id %d",temp->tid,tid);
 		if(temp -> tid == tid)
 		{
 			tcb_lock = 0;

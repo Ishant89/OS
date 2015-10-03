@@ -27,6 +27,9 @@ void handler_t(void *arg, ureg_t *ureg)
   lprintf("In swexn Handler!!\n");
   lprintf("CR2: %x  Low ptr: %p EIP: %x Reason: %d\n",ureg->cr2,stack_low_ptr,ureg->eip,ureg->cause);
 
+  if(ureg -> cause != 14)
+    task_vanish(-2);
+
   unsigned long extend_stack_size = GET_EXTENDED_STACK_BASE(stack_low_ptr,ureg->cr2);
 
   lprintf("Stack size: %ld",extend_stack_size);
@@ -40,13 +43,14 @@ void handler_t(void *arg, ureg_t *ureg)
     return;
   }
 
-  if (swexn(exception_stack_high, handler_t , NULL, NULL) < 0)
+  if (swexn(exception_stack_high, handler_t , NULL, ureg) < 0)
   {
     lprintf("Cannot register SWEXN handler\n");
     err_num = SWEXN_INSTALL_ERROR;
     return;
   }
-  resume_thread(ureg);
+  //resume_thread(ureg);
+  return;
 }
 
 void

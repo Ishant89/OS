@@ -63,7 +63,7 @@ int main(int argc, char **argv)
 
 	for (i=0; i<strlen(myOutput); i++)
 		{
-			curArg=_malloc(sizeof(myArgs));
+			curArg=malloc(sizeof(myArgs));
 			
 			curArg->cookie=myOutput[i];
 			
@@ -79,7 +79,7 @@ int main(int argc, char **argv)
 
 			if(curArg != NULL)
 				{
-					_free(curArg);
+					free(curArg);
 				}
 		}
 
