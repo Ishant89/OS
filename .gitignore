@@ -39,10 +39,12 @@ cscope.*
 #Misc
 temp/*
 .*.swp
+.*.swo
 .md5s
 *.dep
 *.gz
 kernel
 kernel.log
+kernel.strip
 user/progs/*
 OldFiles/*

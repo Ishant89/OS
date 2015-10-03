@@ -41,7 +41,7 @@ struct tcb {
 
 #define TCB_SIZE sizeof(tcb_struct)
 
-#define STACK_BUFFER 16
+#define STACK_BUFFER 256
 
 #define TCB_NOT_FOUND NULL
 
