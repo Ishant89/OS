@@ -9,13 +9,35 @@
  *  2. mutex_destroy
  *  3. mutex_lock
  *  4. mutex_unlock
- *	
+ *  Note: This design will change for M:N implementation	
  *	@author Ishant Dawer(idawer)
  *	@bug Malloc is not thread-safe
  */
 
+
+
 /*EDIT: MAKE MALLOC SAFE*/
+//#define DEBUG 0
 #include "mutex_private.h"
+
+void debug_mutex_structure()
+{
+	mutex_thread_object * temp;
+	thread_queue * temp_queue;
+	SIPRINTF("Begin trace\n");
+	for (temp = head_mutex_object; temp != NULL; 
+			temp= temp->next_mutex_object)
+	{
+		SIPRINTF("Mutex id is %u\n",temp->mutex_id);
+		thread_queue * queue = temp -> head_queue;
+		for (temp_queue = queue; temp_queue!=NULL;
+				temp_queue=temp_queue->next_thread_id)
+		{
+			SIPRINTF("TID is %u\n",temp_queue->thread_id);
+		}
+	}
+	SIPRINTF("End trace\n");
+}
 
 /** @brief Add mutex objects to top
  *  
@@ -44,12 +66,22 @@ void add_mutex_object_list(mutex_thread_object * object)
 int rem_mutex_object_by_mutex_id(unsigned int mutex_id)
 {
 	mutex_thread_object * temp_obj,*temp; 
-	for (temp_obj = head_mutex_object; temp_obj != NULL; temp_obj = temp_obj -> next_mutex_object)
+	if (head_mutex_object == NULL)
+		return FAIL;
+
+	if (head_mutex_object -> next_mutex_object == NULL && head_mutex_object->mutex_id == mutex_id)
+	{
+		head_mutex_object = NULL;
+		return PASS;
+	}
+	for (temp_obj = head_mutex_object; temp_obj->next_mutex_object != NULL; 
+			temp_obj = temp_obj -> next_mutex_object)
 	{
 		if (temp_obj -> next_mutex_object -> mutex_id == mutex_id)
 		{
 			temp = temp_obj -> next_mutex_object;
-			temp_obj -> next_mutex_object = temp -> next_mutex_object;
+			temp_obj -> next_mutex_object = 
+				temp -> next_mutex_object;
 			return PASS;
 		}
 	}
@@ -88,6 +120,7 @@ mutex_thread_object * get_mutex_object_by_mutex_id(unsigned int mutex_id)
 
 int get_number_elements_queue(thread_queue ** head_queue)
 {
+	ASSERT(head_queue != NULL);
 	int num_elems = 0 ;
 	thread_queue * temp;
 	for (temp=*head_queue;temp!=NULL;temp=temp->next_thread_id)
@@ -107,20 +140,50 @@ int get_number_elements_queue(thread_queue ** head_queue)
  *  @return void 
  */
 
-void append_thread_id_to_queue(thread_queue ** queue_head, thread_queue * last_elem)
+void append_thread_id_to_queue(
+		thread_queue ** queue_head, 
+		thread_queue * last_elem
+		)
 {
+	ASSERT(queue_head != NULL);
 	thread_queue * temp;
 	if (*queue_head == NULL)
 	{
 		*queue_head = last_elem;
 		return;
 	}
-	for (temp=*queue_head; (temp -> next_thread_id) != NULL;temp=temp->next_thread_id)
+	for (temp=*queue_head; (temp -> next_thread_id) != NULL;
+			temp=temp->next_thread_id)
 	{
 		continue;
 	}
 	temp -> next_thread_id = last_elem;
 	last_elem -> next_thread_id= NULL;
+}
+
+/** @brief Check if thread is already in queue
+ *  
+ *  This iterates over the queue and check if thread 
+ *  already exists in the queue 
+ *
+ *  @param head_queue address of head queue 
+ *  @param thread_id Id of the thread
+ *
+ *  @return Pass/Fail 
+ */
+
+int check_if_thread_in_queue(thread_queue ** head_queue,unsigned int thread_id)
+{
+	thread_queue * temp;
+	for (temp=*head_queue;temp != NULL;temp=temp->next_thread_id)
+	{
+		if (temp->thread_id == thread_id)
+		{
+			return PASS;
+		}
+	}
+	return FAIL;
+
 }
 
 /** @brief remove thread id from the top of the queue
@@ -136,7 +199,7 @@ void append_thread_id_to_queue(thread_queue ** queue_head, thread_queue * last_e
 thread_queue * remove_thread_id_from_queue(thread_queue ** queue_head)
 {
 	thread_queue * temp = NULL;
-	if (queue_head != NULL)
+	if (*queue_head != NULL)
 	{
 		temp = *queue_head;
 		*queue_head = temp->next_thread_id;
@@ -163,16 +226,19 @@ int mutex_init(mutex_t * mp)
 	unsigned int mutex_id = GET_MUTEX_ID(mp);
 	/* Assign a mutex object */
 	mutex_thread_object * mutex_obj = (mutex_thread_object*)
-		_malloc(sizeof(mutex_thread_object));
+		malloc(sizeof(mutex_thread_object));
 
 	if (mutex_obj == NULL)
 		return FAIL;
 	mutex_obj -> mutex_id = mutex_id;
 	mutex_obj -> head_queue = NULL;
-	mutex_obj -> lock = 1;//Change with mutex lock
+	mutex_obj -> lock = 0;//Change with mutex lock
 	
 	/* Adding object to the global list of mutex objs*/
 	add_mutex_object_list(mutex_obj);
+
+	/*EDIT: TO be removed*/
+	//debug_mutex_structure();
 	return PASS;	
 }
 
@@ -197,18 +263,48 @@ void mutex_lock(mutex_t * mp)
 	int reject = 0;
 	/* get the mutex id from the structure */
 	unsigned int mutex_id = GET_MUTEX_ID(mp);
-
 	/* Get the thread id of the thread */
-	int thread_id = thr_getid();
+	int thread_id = gettid();
 
 	/* Get the mutex object */
-	mutex_thread_object * mutex_identifier = get_mutex_object_by_mutex_id(mutex_id);
+	mutex_thread_object * mutex_identifier = 
+		get_mutex_object_by_mutex_id(mutex_id);
+
+	if ( mutex_identifier == NULL)
+	{
+		SIPRINTF("Call mutex init first \n");
+		task_vanish(-2);
+		return;
+	}
 
 	/* Get the head of the thread queue */
 	thread_queue * head_queue = mutex_identifier -> head_queue;
 
+	/* Verify if same thread is not issuing mutex_lock again*/
+	if (check_if_thread_in_queue(&head_queue,thread_id) == PASS)
+	{
+		SIPRINTF("Thread already in queue \n");
+		return ;
+	}
+
+	
+
+	/* Create a thread structure to be added to head_queue */
+	thread_queue * new_thread_request = 
+		(thread_queue*) malloc(sizeof(thread_queue));
+	new_thread_request->thread_id = thread_id;
+	new_thread_request->next_thread_id = NULL;
+		
+	/* EDIT:Change the lock with compare & exchange or
+	 * compare value & swap */
+	while (compAndXchg((void*)&mutex_identifier->lock,0,1))
+	{
+		continue;
+	}	
+
 	/*Get the number of thread elements */
-	int num_elems = get_number_elements_queue(&head_queue);
+	int num_elems = get_number_elements_queue(&mutex_identifier -> head_queue);
+
 
 	/* Set the first tid in the flag queue */
 	int if_first_thread_in_queue = 0;
@@ -217,24 +313,16 @@ void mutex_lock(mutex_t * mp)
 		if_first_thread_in_queue = 1;
 	}
 
-	/* Create a thread structure to be added to head_queue */
-	thread_queue * new_thread_request = (thread_queue*) _malloc(sizeof(thread_queue));
-	new_thread_request->thread_id = thread_id;
-	new_thread_request->next_thread_id = NULL;
-		
-	/* EDIT:Change the lock with compare & exchange or compare value & swap */
-	while (!mutex_identifier->lock)
-	{
-		continue;
-	}	
-	/*Take the lock */
-	mutex_identifier->lock = 0;
-
 	/* Critical section */
-	append_thread_id_to_queue(&head_queue,new_thread_request);
+	append_thread_id_to_queue(&(mutex_identifier->head_queue),new_thread_request);
+
 
 	/*Release the lock */
-	mutex_identifier->lock = 1;
+	mutex_identifier->lock = 0;
+
+	/*EDIT: */
+
+	debug_mutex_structure();
 
 	if (!if_first_thread_in_queue)
 	{
@@ -267,34 +355,53 @@ void mutex_unlock(mutex_t *mp)
 	unsigned int mutex_id = GET_MUTEX_ID(mp);
 
 	/* Get the mutex object */
-	mutex_thread_object * mutex_identifier = get_mutex_object_by_mutex_id(mutex_id);
-	/* Get the head of the thread queue */
-	thread_queue * head_queue = mutex_identifier -> head_queue;
+	mutex_thread_object * mutex_identifier = 
+		get_mutex_object_by_mutex_id(mutex_id);
 
-	/* EDIT:Change the lock with compare & exchange or compare value & swap */
-	while (!mutex_identifier->lock)
+	/* EDIT:Change the lock with compare & exchange or 
+	 * compare value & swap */
+	if (mutex_identifier == NULL)
+	{
+		SIPRINTF("Call mutex_init first");
+		task_vanish(-2);
+		return;
+	}
+
+
+	while (compAndXchg((void *)&mutex_identifier->lock,0,1))
 	{
 		continue;
 	}	
-	/*Take the lock */
-	mutex_identifier->lock = 0;
+
+	/* Check if the mutex unlock is not invoked by the thread id other than the 
+	 * one keeping the lock */
+	if (mutex_identifier -> head_queue -> thread_id != gettid())
+	{
+		SIPRINTF("Some thread is trying to unlock ");
+		task_vanish(-2);
+		return ;
+	}	
 
 	/*Object to be removed */
-	thread_queue * temp = remove_thread_id_from_queue(&head_queue);
+	thread_queue * temp = remove_thread_id_from_queue(&(mutex_identifier->head_queue));
+
+	/* Get the head of the thread queue */
+	thread_queue * head_queue = mutex_identifier -> head_queue;
 
 	if (head_queue != NULL)
 	{
-		if(make_runnable(head_queue->thread_id) < 0)
+		while(make_runnable(mutex_identifier->head_queue->thread_id) < 0)
 		{
-			mutex_identifier->lock = 1;
-			return; 
+			continue;
 		}
 	}
-	mutex_identifier->lock = 1;
+	mutex_identifier->lock = 0;
 
+	/*EDIT: To be removed */
+	debug_mutex_structure();
 	/* Free the temp thread queue entry for the popped entry*/
 	free(temp);
-
+	
 }
 
 /** @brief mutex destroy
@@ -311,24 +418,48 @@ void mutex_destroy(mutex_t *mp)
 	unsigned int mutex_id = GET_MUTEX_ID(mp);
 
 	/* Get the mutex object */
-	mutex_thread_object * mutex_identifier = get_mutex_object_by_mutex_id(mutex_id);
-	/* Get the head of the thread queue */
-	thread_queue * head_queue = mutex_identifier -> head_queue;
+	mutex_thread_object * mutex_identifier = 
+		get_mutex_object_by_mutex_id(mutex_id);
+
+	if (mutex_identifier == NULL)
+	{
+		SIPRINTF("Use mutex init first\n");
+		task_vanish(-2);
+		return;
+	}
+	/*Take the lock */
+	while (compAndXchg((void*)&mutex_identifier->lock,0,1))
+	{
+		continue;
+	}
 	/* Get the lock status from the queue and use compare excahnge */
 	int lock = mutex_identifier-> lock;
 	
 	/* Get the number of elements in the queue */
-	int num_elems = get_number_elements_queue(&head_queue);
+	int num_elems = get_number_elements_queue(&(mutex_identifier->head_queue));
 
+	/* Either lock is still taken and elements are still there */
 	if (lock == 0 || num_elems != 0)
 	{
+		SIPRINTF("Terminating : Either lock is nt released or elements are there\n");
+		/* Change status to macro */
+		task_vanish(-2);
 		return;
 	}
 
+	/* Remove the mutex object by its id*/
+	rem_mutex_object_by_mutex_id(mutex_id);
+
+	/*Release the lock */
+	mutex_identifier->lock = 0;
+	
 	/* Mostly head_queue should be null here */
-	if (head_queue != NULL)
-		free(head_queue);
+	if (mutex_identifier->head_queue != NULL)
+		free(mutex_identifier->head_queue);
+
 
 	/* Remove the mutex object */
 	free(mutex_identifier);
+	/*EDIT: To be removed */
+	//debug_mutex_structure();
 }

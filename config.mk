@@ -85,20 +85,20 @@ UPDATE_METHOD = afs
 # A list of the test programs you want compiled in from the 410user/progs
 # directory
 #
-410TESTS = switzerland largetest startle actual_wait thr_exit_join stack_test1 cyclone join_specific_test excellent wild_test1 bistromath nibbles
-
+410TESTS = switzerland largetest startle actual_wait thr_exit_join stack_test1 cyclone join_specific_test excellent wild_test1 bistromath juggle racer
 ###########################################################################
 # Test programs you have written which you wish to run
 ###########################################################################
 # A list of the test programs you want compiled in from the user/progs
 # directory
 #
-STUDENTTESTS = test test_fork test_new_pages test_thread_fork test_thread_create cyclone_usr
-
+STUDENTTESTS = test test_fork test_new_pages test_thread_fork test_thread_create 
+			  
 ###########################################################################
 # Object files for your thread library
 ###########################################################################
-THREAD_OBJS = malloc.o panic.o thread_fork.o thread_library_main.o compAndXchg.o
+THREAD_OBJS = malloc.o panic.o thread_fork.o thread_library_main.o mutex_main.o \
+			  compAndXchg.o mm_new_pages.o semaphore_main.o
 
 # Thread Group Library Support.
 #

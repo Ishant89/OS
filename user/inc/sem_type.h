@@ -8,6 +8,7 @@
 
 typedef struct sem {
   /* fill this in */
+  unsigned int semaphore_id;
 } sem_t;
 
 #endif /* _SEM_TYPE_H */

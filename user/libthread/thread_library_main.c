@@ -15,9 +15,10 @@
  *
  *	@bug 
  */
-
-#include<thr_internals.h>
+#define DEBUG 0
+#include <thr_internals.h>
 #include "thr_private.h"
+#include "mm_new_pages.h"
 #include <thread.h>
 #include<syscall.h>
 #include<stdlib.h>
@@ -40,7 +41,7 @@ int thr_init(unsigned int size)
 
 	tcb_lock = 0;
 	/* Allocate parent TCB */
-	void * tcb_mem = _calloc(1,TCB_SIZE);
+	void * tcb_mem = calloc(1,TCB_SIZE);
 
 	tcb name = (tcb) tcb_mem;
 	/* EDIT: name-> sp, name->func, name->arg and name->waiter to be decided */
@@ -50,6 +51,7 @@ int thr_init(unsigned int size)
 	name->children = NULL;
 	name->lock_available = 0;
 	insert_tcb_list(name);
+	mm_init_new_pages(size);
 	return flag;
 }
 
@@ -70,15 +72,17 @@ typedef void *(*func)(void*) ;
 
 int thr_create( func handler, void * arg )
 {
-	//lprintf("Entering thr create");
+	SIPRINTF("Entering thr create");
 	/* Create stack for the thread */
 	/*EDIT: Replace 1 with macro */
 	
-	void * stack_tcb_mem = _calloc(1,(stack_size + TCB_SIZE + STACK_BUFFER));
+	//void * stack_tcb_mem = calloc(1,(stack_size + TCB_SIZE + STACK_BUFFER));
+
+	void * stack_tcb_mem = new_pages_malloc();
 
 	if(stack_tcb_mem == NULL)
 	{
-		lprintf("Exiting thr_create with error : Could not allocate TCB and stack for thread\n");
+		SIPRINTF("Exiting thr_create with error : Could not allocate TCB and stack for thread\n");
 		return THREAD_NOT_CREATED;
 	}
 
@@ -90,6 +94,7 @@ int thr_create( func handler, void * arg )
 	name->waiter = -1;
 	name->lock_available = 0;
 
+
 	/*tcb current = get_tcb_from_kid(gettid());
 	print_tcb_list();
 	push_children(&(current -> children),name);
@@ -100,12 +105,12 @@ int thr_create( func handler, void * arg )
 	/* If child call the handler */
 	if (!pid)
 	{
-		//int my_pid = gettid();
-		//lprintf("In thr_create and in child :%d",my_pid);
+		int my_pid = gettid();
+		SIPRINTF("In thr_create and in child :%d",my_pid);
 		int status;
-		while(!(status = check_if_pid_exists_tcb(gettid())))
+		while(!(status = check_if_pid_exists_tcb(my_pid)))
 		{
-	    //lprintf("In thr_create : Child TCB found status %d",!status);
+	    //SIPRINTF("In thr_create : Child TCB found status %d",!status);
 			yield(-1);
 		}
 		int result = (int)name->func(name->arg);
@@ -115,8 +120,8 @@ int thr_create( func handler, void * arg )
 	name->kid = pid;
 	name->tid = pid;
 	insert_tcb_list(name);
-	//print_tcb_list();
-	//lprintf("Exting thr_creat with Success : Done creating thread: %d",pid);
+	print_tcb_list();
+	SIPRINTF("Exting thr_creat with Success : Done creating thread: %d",pid);
 	return pid;
 }
 
@@ -127,7 +132,7 @@ void print_tcb_list()
 
 	while(temp != NULL)
 	{
-		lprintf("TCB: %p Kid: %d Tid: %d",temp,temp->tid,temp->kid);
+		SIPRINTF("TCB: %p Kid: %d Tid: %d",temp,temp->tid,temp->kid);
 		temp = temp->next;
 	}
 
@@ -136,7 +141,7 @@ void print_tcb_list()
 
 int thr_join( int tid, void **statusp)
 {
-	//lprintf("Entring join with tid: %d",tid);
+	SIPRINTF("Entring join with tid: %d",tid);
 
 	int reject = 0;
 
@@ -144,7 +149,7 @@ int thr_join( int tid, void **statusp)
 
 	if(child == NULL)
 	{
-		lprintf("Exiting join with error : Cannot find child TCB %d in join",tid);
+		SIPRINTF("Exiting join with error : Cannot find child TCB %d in join",tid);
 		return THREAD_NOT_CREATED;
 	}
 
@@ -155,10 +160,10 @@ int thr_join( int tid, void **statusp)
 		if(statusp != NULL)
 		 *statusp = child -> exit_status;
 		remove_tcb_from_list(child);
-		//print_tcb_list();
 		child -> lock_available = 0;
-		_free(child);
-		//lprintf("Exiting join  with success without wait and tid: %d",tid);
+		//free(child);
+		free_pages(child);
+		SIPRINTF("Exiting join  with success without wait and tid: %d",tid);
 		return 0;
 	}
 
@@ -168,16 +173,16 @@ int thr_join( int tid, void **statusp)
 		child -> lock_available = 0;
 
 		if(deschedule(&reject) < 0)
-			lprintf("Cannot reschdule parent!\n");
+			SIPRINTF("Cannot reschdule parent!\n");
 
 		while(compAndXchg((void *)&(child -> lock_available),0,1));
 		if(statusp != NULL)
 		 *statusp = child -> exit_status;
 		remove_tcb_from_list(child);
-		//print_tcb_list();
 		child -> lock_available = 0;
-		_free(child);
-		//lprintf("Exiting join with success with wait and tid: %d",tid);
+		//free(child);
+		free_pages(child);
+		SIPRINTF("Exiting join with success with wait and tid: %d",tid);
 		return 0;
 
 	}
@@ -189,7 +194,7 @@ void thr_exit( void *status )
 
 	tcb current = get_tcb_from_kid(gettid());
 
-	//lprintf("Entring exit with tid: %d",current->tid);
+	SIPRINTF("Entring exit with tid: %d",current->tid);
 
 	while(compAndXchg((void *)&(current -> lock_available),0,1));
 
@@ -198,13 +203,13 @@ void thr_exit( void *status )
 	if(current -> waiter != -1)
 	{
 		while(make_runnable(current -> waiter) < 0);
-		//lprintf("Made runnable %d by %d",current -> waiter,current -> tid);
+		SIPRINTF("Made runnable %d by %d",current -> waiter,current -> tid);
 	}
 
 	else
 		setDone(current);
 
-	//lprintf("Exiting thr_exit with tid is : %d",current -> tid);
+	SIPRINTF("Exiting thr_exit with tid is : %d",current -> tid);
 
 	current -> lock_available = 0;
 
@@ -255,7 +260,7 @@ void remove_tcb_from_list(tcb entry)
 	}
 
 	if(prev)
-		prev -> next = temp->next;
+		prev -> next = temp -> next;
 	else
 		tcb_head = temp -> next;
 
@@ -309,11 +314,11 @@ int check_if_pid_exists_tcb(int tid)
 {
 	while(compAndXchg((void *)&(tcb_lock),0,1));
 	tcb temp = tcb_head;
-	//lprintf("Searching TCB from Head :%p",temp);
+	//SIPRINTF("Searching TCB from Head :%p",temp);
 	while(temp != NULL)
 	{
 
-		//lprintf("Temp id: %d True id %d",temp->tid,tid);
+		//SIPRINTF("Temp id: %d True id %d",temp->tid,tid);
 		if(temp -> tid == tid)
 		{
 			tcb_lock = 0;
@@ -330,7 +335,7 @@ int check_if_pid_exists_tcb(int tid)
 
 void push_children(children_list **head,tcb child)
 {
-	children_list *tl = _calloc(1,sizeof(children_list));
+	children_list *tl = calloc(1,sizeof(children_list));
 	tl -> next = *head;
 	tl -> name = child;
 	*head = tl;
@@ -361,7 +366,7 @@ void free_child_thread_list(children_list * head)
 	while(head)
 	{
 		next = head -> next;
-		_free(head);
+		free(head);
 		head = next;
 	}
 }
@@ -369,9 +374,9 @@ void free_child_thread_list(children_list * head)
 void freeThread(tcb thread)
 {
 	if (thread->waiter != -1) {
-    lprintf("Thread %p exits while waiting on something\n", thread);
+    SIPRINTF("Thread %p exits while waiting on something\n", thread);
   }
 
   free_child_thread_list(thread->children);
-  _free(thread);
+  free(thread);
 }

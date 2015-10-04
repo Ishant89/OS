@@ -11,45 +11,44 @@
  *  @bug 
  */
 
+#define DEBUG 0
 #include <autostack.h>
 #include <thr_internals.h>
 #include <simics.h>
 #include <syscall.h>
 #include <stdlib.h>
 
-void * stack_high_ptr;
-void * stack_low_ptr;
-
-void * exception_stack_high;
 
 void handler_t(void *arg, ureg_t *ureg)
 {
-  lprintf("In swexn Handler!!\n");
-  lprintf("CR2: %x  Low ptr: %p EIP: %x Reason: %d\n",ureg->cr2,stack_low_ptr,ureg->eip,ureg->cause);
+  SIPRINTF("In swexn Handler!!\n");
+  SIPRINTF("CR2: %x  Low ptr: %p EIP: %x Reason: %d\n",ureg->cr2,stack_low_ptr,ureg->eip,ureg->cause);
 
+  /* Check if it is a page fault exception */
   if(ureg -> cause != 14)
     task_vanish(-2);
 
   unsigned long extend_stack_size = GET_EXTENDED_STACK_BASE(stack_low_ptr,ureg->cr2);
 
-  lprintf("Stack size: %ld",extend_stack_size);
+  SIPRINTF("Stack size: %ld",extend_stack_size);
 
   stack_low_ptr = GET_STACK_LOW_ADDRESS((unsigned int)stack_low_ptr,extend_stack_size);
 
   if(new_pages(stack_low_ptr,extend_stack_size) < 0)
   {
-    lprintf("New pages error\n");
+    SIPRINTF("New pages error\n");
     err_num = NEW_PAGES_ERROR;
+	  task_vanish(err_num);
     return;
   }
 
   if (swexn(exception_stack_high, handler_t , NULL, ureg) < 0)
   {
-    lprintf("Cannot register SWEXN handler\n");
+    SIPRINTF("Cannot register SWEXN handler\n");
     err_num = SWEXN_INSTALL_ERROR;
+	  task_vanish(err_num);
     return;
   }
-  //resume_thread(ureg);
   return;
 }
 
@@ -63,7 +62,7 @@ install_autostack(void *stack_high, void *stack_low)
 
   if(new_pages(exception_stack_base,20 * EXCEPTION_STACK_SIZE) < 0)
   {
-    lprintf("New pages error\n");
+    SIPRINTF("New pages error\n");
     err_num = NEW_PAGES_ERROR;
     return;
   }
@@ -72,7 +71,7 @@ install_autostack(void *stack_high, void *stack_low)
   //ureg_t * newreg = _calloc(1,sizeof(ureg_t));
   if (swexn(stack_low, handler_t , NULL, NULL) < 0)
   {
-    lprintf("Cannot register SWEXN handler\n");
+    SIPRINTF("Cannot register SWEXN handler\n");
     err_num = SWEXN_INSTALL_ERROR;
     return;
   }
@@ -86,7 +85,7 @@ install_autostack(void *stack_high, void *stack_low)
 
   if (swexn(exception_stack_high, handler_t , NULL, NULL) < 0)
   {
-    lprintf("Cannot register SWEXN handler\n");
+    SIPRINTF("Cannot register SWEXN handler\n");
     err_num = SWEXN_INSTALL_ERROR;
     return;
   }

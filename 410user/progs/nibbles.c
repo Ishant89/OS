@@ -390,7 +390,7 @@ void nibbles()
 
 int main(int argc, char *argv[])
 {
-  int rand_seed;
+  int rand_seed, child_tid;
 
   if (argc > 1) {
     sleep_ticks = atoi(argv[1]);
@@ -403,7 +403,8 @@ int main(int argc, char *argv[])
   for(con_height = 0; !set_cursor_pos(con_height, 0); con_height++);
 
   /* spawn key_scanner */
-   spawn_key_grabber();
+  child_tid = spawn_key_grabber();
+
   /* print out the directions */
   print_directions();
 

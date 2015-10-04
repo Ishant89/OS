@@ -30,5 +30,10 @@
 /* Error number */
 int err_num;
 
+void * stack_high_ptr;
+void * stack_low_ptr;
+
+void * exception_stack_high;
+
 
 void resume_thread(ureg_t *ureg);
