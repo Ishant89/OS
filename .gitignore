@@ -46,5 +46,6 @@ temp/*
 kernel
 kernel.log
 kernel.strip
+410user/progs/*
 OldFiles/*
 config.mk
