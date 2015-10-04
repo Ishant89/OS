@@ -8,6 +8,7 @@
 
 typedef struct cond {
   /* fill this in */
+	unsigned int cond_id;
 } cond_t;
 
 #endif /* _COND_TYPE_H */

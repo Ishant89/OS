@@ -259,6 +259,7 @@ int mutex_init(mutex_t * mp)
 
 void mutex_lock(mutex_t * mp)
 {
+	SIPRINTF("Entering mutex lock by tid %d",gettid());
 	/*Deschedule condition */
 	int reject = 0;
 	/* get the mutex id from the structure */
@@ -302,6 +303,7 @@ void mutex_lock(mutex_t * mp)
 		continue;
 	}	
 
+	SIPRINTF("Lock is with tid %d",gettid());
 	/*Get the number of thread elements */
 	int num_elems = get_number_elements_queue(&mutex_identifier -> head_queue);
 
@@ -320,6 +322,7 @@ void mutex_lock(mutex_t * mp)
 	/*Release the lock */
 	mutex_identifier->lock = 0;
 
+	SIPRINTF("Lock is just released by tid %d",gettid());
 	/*EDIT: */
 
 	debug_mutex_structure();
@@ -327,11 +330,13 @@ void mutex_lock(mutex_t * mp)
 	if (!if_first_thread_in_queue)
 	{
 		/*Deschedule if not first element in the queue */
+		SIPRINTF("TID is descheduled %d",gettid());
 		if(deschedule(&reject) < 0)
 		{
 			return;
 		}
 	}
+	SIPRINTF("Exiting mutex lock by tid %d",gettid());
 }
 
 
@@ -351,6 +356,7 @@ void mutex_lock(mutex_t * mp)
 
 void mutex_unlock(mutex_t *mp)
 {
+	SIPRINTF("Entering mutex unlock by tid %d",gettid());
 	/* get the mutex id from the structure */
 	unsigned int mutex_id = GET_MUTEX_ID(mp);
 
@@ -375,9 +381,10 @@ void mutex_unlock(mutex_t *mp)
 
 	/* Check if the mutex unlock is not invoked by the thread id other than the 
 	 * one keeping the lock */
+	SIPRINTF("Lock is with tid %d",gettid());
 	if (mutex_identifier -> head_queue -> thread_id != gettid())
 	{
-		SIPRINTF("Some thread is trying to unlock ");
+		SIPRINTF("Some other thread is trying to unlock ");
 		task_vanish(-2);
 		return ;
 	}	
@@ -390,6 +397,7 @@ void mutex_unlock(mutex_t *mp)
 
 	if (head_queue != NULL)
 	{
+		SIPRINTF("%d made %d runnable",gettid(),mutex_identifier->head_queue->thread_id);
 		while(make_runnable(mutex_identifier->head_queue->thread_id) < 0)
 		{
 			continue;
@@ -397,9 +405,11 @@ void mutex_unlock(mutex_t *mp)
 	}
 	mutex_identifier->lock = 0;
 
+	SIPRINTF("Lock is just released by tid %d",gettid());
 	/*EDIT: To be removed */
 	debug_mutex_structure();
 	/* Free the temp thread queue entry for the popped entry*/
+	SIPRINTF("Exiting mutex unlock by tid %d",gettid());
 	free(temp);
 	
 }
