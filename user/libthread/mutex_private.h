@@ -29,6 +29,7 @@
 #include<contracts.h>
 /*EDIT:To be removed*/
 #include<simics.h>
+#include<thr_internals.h>
 
 /** @brief Pass/Fail */
 #define PASS 0
@@ -71,3 +72,9 @@ mutex_thread_object * head_mutex_object = NULL;
 
 int compAndXchg(void *,int,int);
 
+/* Functions */
+
+int mutex_init( mutex_t *mp );
+void mutex_destroy( mutex_t *mp );
+void mutex_lock( mutex_t *mp );
+void mutex_unlock( mutex_t *mp );

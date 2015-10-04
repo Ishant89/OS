@@ -48,3 +48,4 @@ kernel.log
 kernel.strip
 user/progs/*
 OldFiles/*
+config.mk

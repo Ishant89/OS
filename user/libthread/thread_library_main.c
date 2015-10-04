@@ -309,11 +309,11 @@ int check_if_pid_exists_tcb(int tid)
 {
 	while(compAndXchg((void *)&(tcb_lock),0,1));
 	tcb temp = tcb_head;
-	SIPRINTF("Searching TCB from Head :%p",temp);
+	//SIPRINTF("Searching TCB from Head :%p",temp);
 	while(temp != NULL)
 	{
 
-		SIPRINTF("Temp id: %d True id %d",temp->tid,tid);
+		//SIPRINTF("Temp id: %d True id %d",temp->tid,tid);
 		if(temp -> tid == tid)
 		{
 			tcb_lock = 0;
