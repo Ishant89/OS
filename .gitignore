@@ -49,3 +49,4 @@ kernel.strip
 410user/progs/*
 OldFiles/*
 config.mk
+user/progs/*
