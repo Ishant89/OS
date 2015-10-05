@@ -216,6 +216,7 @@ void reader_request_handle(rwlock_thread_object * rwlock_identifier)
 	/* Take the lock */
 	mutex_lock(&(rwlock_identifier->global_lock));
 
+	SIPRINTF("Reader came");
 	while (rwlock_identifier->writecnt > 0 && 
 			rwlock_identifier->downgrade_id==-1)
 	{
@@ -245,7 +246,7 @@ void writer_request_handle(rwlock_thread_object * rwlock_identifier)
 {
 	/* Take the lock */
 	mutex_lock(&(rwlock_identifier->global_lock));
-
+	SIPRINTF("Writer came");
 	while (rwlock_identifier->writecnt > 0 || 
 			rwlock_identifier->readcnt > 0 
 			)

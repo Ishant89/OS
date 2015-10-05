@@ -93,7 +93,8 @@ UPDATE_METHOD = afs
 # A list of the test programs you want compiled in from the user/progs
 # directory
 #
-STUDENTTESTS = test test_fork test_new_pages test_thread_fork test_thread_create 
+STUDENTTESTS = test test_fork test_new_pages test_thread_fork test_thread_create \
+			   test_rwlock
 			  
 ###########################################################################
 # Object files for your thread library
