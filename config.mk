@@ -85,7 +85,8 @@ UPDATE_METHOD = afs
 # A list of the test programs you want compiled in from the 410user/progs
 # directory
 #
-410TESTS = switzerland largetest startle actual_wait thr_exit_join stack_test1 cyclone join_specific_test excellent wild_test1 bistromath juggle racer
+410TESTS = switzerland startle actual_wait thr_exit_join stack_test1 cyclone join_specific_test excellent wild_test1 bistromath juggle racer \
+	test_cvar paraguay cvar_test beady_test agility_drill mandelbrot multitest nibbles rwlock_downgrade_read_test
 ###########################################################################
 # Test programs you have written which you wish to run
 ###########################################################################
@@ -98,7 +99,7 @@ STUDENTTESTS = test test_fork test_new_pages test_thread_fork test_thread_create
 # Object files for your thread library
 ###########################################################################
 THREAD_OBJS = malloc.o panic.o thread_fork.o thread_library_main.o mutex_main.o \
-			  compAndXchg.o mm_new_pages.o semaphore_main.o
+			  compAndXchg.o mm_new_pages.o semaphore_main.o cvar_main.o rwlock_main.o
 
 # Thread Group Library Support.
 #

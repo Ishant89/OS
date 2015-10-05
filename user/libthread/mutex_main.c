@@ -17,7 +17,7 @@
 
 
 /*EDIT: MAKE MALLOC SAFE*/
-//#define DEBUG 0
+#define DEBUG 0
 #include "mutex_private.h"
 
 void debug_mutex_structure()
@@ -69,7 +69,8 @@ int rem_mutex_object_by_mutex_id(unsigned int mutex_id)
 	if (head_mutex_object == NULL)
 		return FAIL;
 
-	if (head_mutex_object -> next_mutex_object == NULL && head_mutex_object->mutex_id == mutex_id)
+	if (head_mutex_object -> next_mutex_object == NULL 
+			&& head_mutex_object->mutex_id == mutex_id)
 	{
 		head_mutex_object = NULL;
 		return PASS;
@@ -259,7 +260,7 @@ int mutex_init(mutex_t * mp)
 
 void mutex_lock(mutex_t * mp)
 {
-	SIPRINTF("Entering mutex lock by tid %d",gettid());
+	SIPRINTF("Entering mutex lock id:%d by tid %d",(unsigned int)mp,gettid());
 	/*Deschedule condition */
 	int reject = 0;
 	/* get the mutex id from the structure */
@@ -336,7 +337,7 @@ void mutex_lock(mutex_t * mp)
 			return;
 		}
 	}
-	SIPRINTF("Exiting mutex lock by tid %d",gettid());
+	SIPRINTF("Exiting mutex lock id: %d by tid %d",mutex_id,gettid());
 }
 
 
@@ -356,7 +357,7 @@ void mutex_lock(mutex_t * mp)
 
 void mutex_unlock(mutex_t *mp)
 {
-	SIPRINTF("Entering mutex unlock by tid %d",gettid());
+	SIPRINTF("Entering mutex unlock id:%d by tid %d",(unsigned int)mp,gettid());
 	/* get the mutex id from the structure */
 	unsigned int mutex_id = GET_MUTEX_ID(mp);
 
@@ -409,7 +410,7 @@ void mutex_unlock(mutex_t *mp)
 	/*EDIT: To be removed */
 	debug_mutex_structure();
 	/* Free the temp thread queue entry for the popped entry*/
-	SIPRINTF("Exiting mutex unlock by tid %d",gettid());
+	SIPRINTF("Exiting mutex unlock id:%d by tid %d",mutex_id,gettid());
 	free(temp);
 	
 }
