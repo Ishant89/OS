@@ -71,7 +71,7 @@ typedef struct semaphore_thread_object
   sem_thread_queue * head_queue;
   struct semaphore_thread_object * next_semaphore_object;
   int lock;
-  int count;
+  volatile int count;
   mutex_t mutex_lock;
 } semaphore_thread_object;
 

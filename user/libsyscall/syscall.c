@@ -119,7 +119,7 @@ int set_cursor_pos(int row, int col)
 	return -1;
 }
 */
-void halt(void)
+/*void halt(void)
 {
 	while (1)
 		continue;
@@ -128,7 +128,7 @@ void halt(void)
 int readfile(char *filename, char *buf, int count, int offset)
 {
 	return -1;
-}
+}*/
 
 /*void task_vanish(int status)
 {

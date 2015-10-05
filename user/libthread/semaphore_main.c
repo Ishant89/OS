@@ -18,7 +18,7 @@
  */
 
 /*EDIT: MAKE MALLOC SAFE*/
-//#define DEBUG 0
+#define DEBUG 0
 #include "semaphore_private.h"
 
 void add_semaphore_object_to_list(semaphore_thread_object *new_sem)
@@ -62,20 +62,29 @@ semaphore_thread_object *get_semaphore_object_from_sem_id(unsigned int sem_id)
 
 void add_thread_to_semaphore_queue(semaphore_thread_object *sem_object,int thread_id)
 {
-  /* Get head of the waiting queue */
-  sem_thread_queue *temp = sem_object -> head_queue;
 
-  /* Append to end of the queue */
-  while(temp != NULL)
+  /* Pack the queue struct to insert */
+  sem_thread_queue *new_element;
+  new_element = calloc(1,sizeof(sem_thread_queue));
+  new_element -> thread_id = thread_id;
+  new_element -> next_thread_id = NULL;
+
+  if(sem_object -> head_queue == NULL)
   {
-    temp = temp -> next_thread_id;
+    sem_object -> head_queue = new_element;
+    return;
   }
 
-  temp = calloc(1,sizeof(sem_thread_queue));
-  temp -> thread_id = thread_id;
-  temp -> next_thread_id = NULL;
+  /* Get head of the waiting queue */
+  sem_thread_queue *iterator = sem_object -> head_queue;
 
+  /* Append to end of the queue */
+  while(iterator -> next_thread_id != NULL)
+  {
+    iterator = iterator -> next_thread_id;
+  }
 
+  iterator -> next_thread_id = new_element;
 }
 
 sem_thread_queue *remove_thread_from_start_queue(semaphore_thread_object *sem_object)
@@ -188,9 +197,10 @@ void sem_wait(sem_t *sem)
     int thread_id = gettid();
     SIPRINTF("Sem_wait : Adding to queue and deschedule thread %d by tid %d",
              thread_id,gettid());
-    if(!check_thread_in_queue(sem_object,thread_id))
+    if(check_thread_in_queue(sem_object,thread_id))
     {
       SIPRINTF("Sem_wait : Thread already in queue");
+      mutex_unlock(&(sem_object -> mutex_lock));1
       return ;
     }
 
@@ -269,9 +279,17 @@ void sem_destroy(sem_t *sem)
   semaphore_thread_object *sem_object;
   sem_object = get_semaphore_object_from_sem_id(sem -> semaphore_id);
 
+  /* Check ig semaphore object exists */
   if(sem_object == NULL)
   {
     SIPRINTF("Sem_destroy : Cannot find semaphore object");
+    task_vanish(-2);
+  }
+
+  /* Check if threads are not waiting on the queue */
+  if(sem_object -> head_queue != NULL)
+  {
+    SIPRINTF("Sem_destroy : Cannot destroy while threads are in the waiting queue");
     task_vanish(-2);
   }
 

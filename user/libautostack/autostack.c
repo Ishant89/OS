@@ -24,7 +24,9 @@ void handler_t(void *arg, ureg_t *ureg)
   SIPRINTF("In swexn Handler!!\n");
   SIPRINTF("CR2: %x  Low ptr: %p EIP: %x Reason: %d\n",ureg->cr2,stack_low_ptr,ureg->eip,ureg->cause);
 
-  /* Check if it is a page fault exception */
+  /* Check if it is a page fault exception
+   * Change this. To be done by ishant
+   */
   if(ureg -> cause != 14)
     task_vanish(-2);
 
