@@ -64,6 +64,42 @@ void add_thread_id_to_queue(
 	last_elem -> next_thread_id= NULL;
 }
 
+/** @brief remove rwlock objects by rwlock id 
+ *  
+ *  This removes rwlock object from the
+ *  list 
+ *   
+ *  @param rwlock_id Mutex id 
+ *  @return Pass/Fail
+ */
+
+int rem_rwlock_object_by_rwlock_id(unsigned int rwlock_id)
+{
+    rwlock_thread_object * temp_obj,*temp; 
+    if (head_rwlock_object == NULL)
+        return FAIL;
+
+    if (head_rwlock_object -> next_rwlock_object == NULL 
+            && head_rwlock_object->rwlock_id == rwlock_id)
+    {
+        head_rwlock_object = NULL;
+        return PASS;
+    }
+    for (temp_obj = head_rwlock_object; temp_obj->next_rwlock_object != NULL; 
+            temp_obj = temp_obj -> next_rwlock_object)
+    {
+        if (temp_obj -> next_rwlock_object -> rwlock_id == rwlock_id)
+        {
+            temp = temp_obj -> next_rwlock_object;
+            temp_obj -> next_rwlock_object = 
+                temp -> next_rwlock_object;
+            return PASS;
+        }
+    }
+    return FAIL;
+}
+
+
 /** @brief get the rwlock object by rwlock id 
  *  
  *  This function is used to find the rwlock object by its 
@@ -447,3 +483,29 @@ void rwlock_downgrade(rwlock_t * rwlock)
 	}
 }
 
+/** @brief rwlock destroy 
+ */
+
+void rwlock_destroy(rwlock_t * rwlock)
+{
+	/* get the rwlock id from the structure */
+	unsigned int rwlock_id = GET_RWLOCK_ID(rwlock);
+
+	/* Get the rwlock object */
+	rwlock_thread_object * rwlock_identifier = 
+		get_rwlock_object_by_rwlock_id(rwlock_id);
+
+	/* Check if the queue is empty or not */
+	if (rwlock_identifier -> head_queue != NULL)
+	{
+		SIPRINTF("Threads are still in rwlock queue ");
+		task_vanish(-2);
+	}
+
+	/* Remove the rwlock object from the list */
+	rem_rwlock_object_by_rwlock_id(rwlock_id);
+	/* Free the rwlock_object */
+
+	free(rwlock_identifier);
+
+}
