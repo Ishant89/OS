@@ -23,25 +23,27 @@
  *  @return Pass/Fail
  */
 
+#define DEBUG 0
+#define DEBUG_CRITICAL 0
 #include "cvar_private.h"
 
 void debug_cond_structure()
 {
 	cond_var_object * temp;
 	wait_thread_queue * temp_queue;
-	SIPRINTF("Begin trace\n");
+	ISPRINTF("Begin trace\n");
 	for (temp = head_cond_object; temp != NULL; 
 			temp= temp->next_cond_object)
 	{
-		SIPRINTF("Cond id is %u\n",temp->cond_id);
+		ISPRINTF("Cond id is %u",temp->cond_id);
 		wait_thread_queue * queue = temp -> head_queue;
 		for (temp_queue = queue; temp_queue!=NULL;
 				temp_queue=temp_queue->next_wait_thread)
 		{
-			SIPRINTF("TID is %u\n",temp_queue->thread_id);
+			ISPRINTF("TID is %u",temp_queue->thread_id);
 		}
 	}
-	SIPRINTF("End trace\n");
+	ISPRINTF("End trace\n");
 }
 
 void add_cond_object_list(cond_var_object * object)
@@ -168,7 +170,7 @@ int rem_cond_object_by_cond_id(unsigned int cond_id)
  *  @return int Success 
  */
 
-wait_thread_queue * remove_thread_id_from_queue(wait_thread_queue ** queue_head)
+wait_thread_queue * remove_thread_id_from_wait_queue(wait_thread_queue ** queue_head)
 {
 	wait_thread_queue * temp = NULL;
 	if (*queue_head != NULL)
@@ -265,7 +267,7 @@ void cond_wait(cond_t * cv, mutex_t*mp)
 	}
 
 	/* Check if thread is already waiting */
-	if (check_if_thread_in_wait_queue(&cond_obj->head_queue,thread_id))
+	if (!check_if_thread_in_wait_queue(&cond_obj->head_queue,thread_id))
 	{
 		SIPRINTF("Thread already waiting");
 		task_vanish(-2);
@@ -279,7 +281,7 @@ void cond_wait(cond_t * cv, mutex_t*mp)
 
 	/* Take the lock */
 
-	while (compAndXchg((void *)cond_obj->cond_lock,0,1))
+	while (compAndXchg((void *)&cond_obj->cond_lock,0,1))
 	{
 		continue;
 	}
@@ -312,6 +314,9 @@ void cond_wait(cond_t * cv, mutex_t*mp)
 	}
 	SIPRINTF("Exiting cond_wait with cv %d and mp %d by tid: %d",
 			(unsigned int) cv,(unsigned int) mp,gettid());
+	
+	/* Take the global lock */
+	mutex_lock(mp);
 }
 
 
@@ -340,7 +345,7 @@ void cond_signal(cond_t * cv )
 	unsigned int cond_id = GET_COND_ID(cv);
 
 	/* Get the thread id  */
-	int thread_id = gettid();
+	//int thread_id = gettid();
 
 	/* Get the condvar object */
 	cond_var_object * cond_obj = get_cond_obj_by_id(cond_id);
@@ -353,7 +358,7 @@ void cond_signal(cond_t * cv )
 
 	/* Take the lock */
 
-	while (compAndXchg((void *)cond_obj->cond_lock,0,1))
+	while (compAndXchg((void *)&cond_obj->cond_lock,0,1))
 	{
 		continue;
 	}
@@ -361,19 +366,24 @@ void cond_signal(cond_t * cv )
 	if (cond_obj -> mutex_object == NULL)
 	{
 		SIPRINTF("None of the mutex objects bound");
+		/*Release the lock */
+		cond_obj->cond_lock = 0;
 		return;
 	}
 
 	if (cond_obj -> head_queue == NULL)
 	{
 		SIPRINTF("Queue is empty");
+		/*Release the lock */
+		cond_obj->cond_lock = 0;
 		return;
 	}
 	
 	SIPRINTF("Lock is with tid %d",gettid());
 	/*Pop the first element from the queue*/
 
-	wait_thread_queue * pop_elem = remove_thread_id_from_queue(
+	debug_cond_structure();
+	wait_thread_queue * pop_elem = remove_thread_id_from_wait_queue(
 			&(cond_obj->head_queue));
 
 	/* If return elem is null, list is empty & reset the associated  
@@ -397,7 +407,7 @@ void cond_signal(cond_t * cv )
 	SIPRINTF("Lock is just released by tid %d",gettid());
 	/*EDIT: */
 
-	//debug_cond_structure();
+	debug_cond_structure();
 
 	SIPRINTF("Exiting cond_signal with cv %d by tid: %d", 
 			(unsigned int) cv,gettid());
@@ -429,7 +439,7 @@ void cond_broadcast(cond_t * cv )
 	unsigned int cond_id = GET_COND_ID(cv);
 
 	/* Get the thread id  */
-	int thread_id = gettid();
+	//int thread_id = gettid();
 
 	/* Get the condvar object */
 	cond_var_object * cond_obj = get_cond_obj_by_id(cond_id);
@@ -442,7 +452,7 @@ void cond_broadcast(cond_t * cv )
 
 	/* Take the lock */
 
-	while (compAndXchg((void *)cond_obj->cond_lock,0,1))
+	while (compAndXchg((void *)&cond_obj->cond_lock,0,1))
 	{
 		continue;
 	}
@@ -450,12 +460,16 @@ void cond_broadcast(cond_t * cv )
 	if (cond_obj -> mutex_object == NULL)
 	{
 		SIPRINTF("None of the mutex objects found");
+		/*Release the lock */
+		cond_obj->cond_lock = 0;
 		return;
 	}
 
 	if (cond_obj -> head_queue == NULL)
 	{
 		SIPRINTF("Queue is empty");
+		/*Release the lock */
+		cond_obj->cond_lock = 0;
 		return;
 	}
 	
@@ -463,9 +477,10 @@ void cond_broadcast(cond_t * cv )
 	/*Pop the first element from the queue*/
 
 	wait_thread_queue * pop_elem;
+	debug_cond_structure();
    	while((pop_elem 
-				= remove_thread_id_from_queue(&(cond_obj->head_queue)))
-			==NULL)
+				= remove_thread_id_from_wait_queue(&(cond_obj->head_queue)))
+			!=NULL)
 	{
 		/* Make runnable */
 		while (make_runnable(pop_elem->thread_id) < 0)
@@ -481,7 +496,7 @@ void cond_broadcast(cond_t * cv )
 	SIPRINTF("Lock is just released by tid %d",gettid());
 	/*EDIT: */
 
-	//debug_cond_structure();
+	debug_cond_structure();
 
 	SIPRINTF("Exiting cond_broadcast with cv %d by tid: %d", 
 			(unsigned int) cv,gettid());

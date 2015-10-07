@@ -29,7 +29,7 @@
 #define PASS 0
 #define FAIL -1
 
-#define GET_COND_ID(cv) (cv -> cond_id)
+#define GET_COND_ID(cv) (unsigned int)(&(cv -> cond_id))
 
 /** @brief Struct for waiting thread queue */
 typedef struct wait_thread_queue

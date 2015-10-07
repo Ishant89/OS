@@ -20,13 +20,15 @@
 #include "thr_private.h"
 #include "mm_new_pages.h"
 #include <thread.h>
-#include<syscall.h>
-#include<stdlib.h>
-#include<simics.h>
+#include <syscall.h>
+#include <stdlib.h>
+#include <simics.h>
 
 
 int thr_init(unsigned int size)
 {
+	mm_init_new_pages(size);
+	mutex_init(&(tcb_lock));
 	int flag;
 	/* Stack Size */
 	/* Check if size is multiple of PAGE_SIZE*/ 
@@ -39,19 +41,21 @@ int thr_init(unsigned int size)
 	else
 		flag = ERROR;
 
-	tcb_lock = 0;
 	/* Allocate parent TCB */
-	void * tcb_mem = calloc(1,TCB_SIZE);
+	void * tcb_mem = new_pages_malloc();
+
+	if(tcb_mem == NULL)
+	{
+		SIPRINTF("Exiting thr_create with error : Could not allocate TCB and stack for thread\n");
+		return THREAD_NOT_CREATED;
+	}
 
 	tcb name = (tcb) tcb_mem;
 	/* EDIT: name-> sp, name->func, name->arg and name->waiter to be decided */
 	name->kid = gettid();
 	name->tid = name->kid;
 	name->waiter = -1;
-	name->children = NULL;
-	name->lock_available = 0;
 	insert_tcb_list(name);
-	mm_init_new_pages(size);
 	return flag;
 }
 
@@ -88,18 +92,12 @@ int thr_create( func handler, void * arg )
 
 	/* TCB done */
 	register tcb name = (tcb) stack_tcb_mem;
-	name->sp = (void*)((unsigned int)stack_tcb_mem + stack_size + TCB_SIZE);
-	name->func = handler;
-	name->arg = arg;
-	name->waiter = -1;
-	name->lock_available = 0;
-
-
-	/*tcb current = get_tcb_from_kid(gettid());
-	print_tcb_list();
-	push_children(&(current -> children),name);
-	*/
-
+	name -> sp = (void*)((unsigned int)stack_tcb_mem + stack_size + TCB_SIZE);
+	name -> func = handler;
+	name -> arg = arg;
+	name -> waiter = -1;
+	mutex_init(&(name -> private_lock));
+	cond_init(&(name -> exit_cond));
 	/*Create kernel thread */
 	int pid = thread_fork(name->sp);
 	/* If child call the handler */
@@ -127,7 +125,7 @@ int thr_create( func handler, void * arg )
 
 void print_tcb_list()
 {
-	while(compAndXchg((void *)&(tcb_lock),0,1));
+	mutex_lock(&tcb_lock);
 	tcb temp = tcb_head;
 
 	while(temp != NULL)
@@ -136,14 +134,12 @@ void print_tcb_list()
 		temp = temp->next;
 	}
 
-	tcb_lock = 0;
+	mutex_unlock(&tcb_lock);
 }
 
 int thr_join( int tid, void **statusp)
 {
 	SIPRINTF("Entring join with tid: %d",tid);
-
-	int reject = 0;
 
 	tcb child = get_tcb_from_tid(tid);
 
@@ -153,16 +149,15 @@ int thr_join( int tid, void **statusp)
 		return THREAD_NOT_CREATED;
 	}
 
-	while(compAndXchg((void *)&(child -> lock_available),0,1));
+	mutex_lock(&(child -> private_lock));
 
 	if(isDone(child))
 	{
 		if(statusp != NULL)
 		 *statusp = child -> exit_status;
 		remove_tcb_from_list(child);
-		child -> lock_available = 0;
-		//free(child);
-		free_pages(child);
+		mutex_unlock(&(child -> private_lock));
+	  free_child_data_structures(child);
 		SIPRINTF("Exiting join  with success without wait and tid: %d",tid);
 		return 0;
 	}
@@ -170,18 +165,17 @@ int thr_join( int tid, void **statusp)
 	else
 	{
 		child -> waiter = gettid();
-		child -> lock_available = 0;
 
-		if(deschedule(&reject) < 0)
-			SIPRINTF("Cannot reschdule parent!\n");
+		while(!isDone(child))
+		{
+			cond_wait(&(child -> exit_cond),&(child -> private_lock));
+		}
 
-		while(compAndXchg((void *)&(child -> lock_available),0,1));
 		if(statusp != NULL)
 		 *statusp = child -> exit_status;
 		remove_tcb_from_list(child);
-		child -> lock_available = 0;
-		//free(child);
-		free_pages(child);
+		mutex_unlock(&(child -> private_lock));
+		free_child_data_structures(child);
 		SIPRINTF("Exiting join with success with wait and tid: %d",tid);
 		return 0;
 
@@ -196,14 +190,14 @@ void thr_exit( void *status )
 
 	SIPRINTF("Entring exit with tid: %d",current->tid);
 
-	while(compAndXchg((void *)&(current -> lock_available),0,1));
+	mutex_lock(&(current -> private_lock));
 
 	current -> exit_status = status;
 
 	if(current -> waiter != -1)
 	{
-		while(make_runnable(current -> waiter) < 0);
-		SIPRINTF("Made runnable %d by %d",current -> waiter,current -> tid);
+		setDone(current);
+		cond_signal(&(current -> exit_cond));
 	}
 
 	else
@@ -211,7 +205,7 @@ void thr_exit( void *status )
 
 	SIPRINTF("Exiting thr_exit with tid is : %d",current -> tid);
 
-	current -> lock_available = 0;
+	mutex_unlock(&(current -> private_lock));
 
 	vanish();
 }
@@ -241,16 +235,16 @@ int thr_getid( void )
 
 void insert_tcb_list(tcb entry)
 {
-	while(compAndXchg((void *)&(tcb_lock),0,1));
+	mutex_lock(&tcb_lock);
 	tcb temp = tcb_head;
 	tcb_head = entry;
 	entry-> next = temp;
-	tcb_lock = 0;
+	mutex_unlock(&tcb_lock);
 }
 
 void remove_tcb_from_list(tcb entry)
 {
-	while(compAndXchg((void *)&(tcb_lock),0,1));
+	mutex_lock(&tcb_lock);
 	tcb temp = tcb_head;
 	tcb prev = NULL;
 	while(temp != entry && temp)
@@ -264,20 +258,20 @@ void remove_tcb_from_list(tcb entry)
 	else
 		tcb_head = temp -> next;
 
-	tcb_lock = 0;
+	mutex_unlock(&tcb_lock);
 		
 }
 
 tcb get_tcb_from_tid(int pid)
 {
-	while(compAndXchg((void *)&(tcb_lock),0,1));
+	mutex_lock(&tcb_lock);
 	tcb temp = tcb_head;
 	while(temp != NULL)
 	{
 
 		if(temp -> tid == pid)
 		{
-			tcb_lock = 0;
+			mutex_unlock(&tcb_lock);
 			return temp;
 		}
 
@@ -285,20 +279,20 @@ tcb get_tcb_from_tid(int pid)
 			temp = temp -> next;
 	}
 
-	tcb_lock = 0;
+	mutex_unlock(&tcb_lock);
 	return TCB_NOT_FOUND;
 }
 
 tcb get_tcb_from_kid(int kid)
 {
-	while(compAndXchg((void *)&(tcb_lock),0,1));
+	mutex_lock(&tcb_lock);
 	tcb temp = tcb_head;
 	while(temp != NULL)
 	{
 
 		if(temp -> kid == kid)
 		{
-			tcb_lock = 0;
+			mutex_unlock(&tcb_lock);
 			return temp;
 		}
 
@@ -306,22 +300,20 @@ tcb get_tcb_from_kid(int kid)
 			temp = temp -> next;
 	}
 
-	tcb_lock = 0;
+	mutex_unlock(&tcb_lock);
 	return TCB_NOT_FOUND;
 }
 
 int check_if_pid_exists_tcb(int tid)
 {
-	while(compAndXchg((void *)&(tcb_lock),0,1));
+	mutex_lock(&tcb_lock);
 	tcb temp = tcb_head;
-	//SIPRINTF("Searching TCB from Head :%p",temp);
 	while(temp != NULL)
 	{
 
-		//SIPRINTF("Temp id: %d True id %d",temp->tid,tid);
 		if(temp -> tid == tid)
 		{
-			tcb_lock = 0;
+			mutex_unlock(&tcb_lock);
 			return 1;
 		}
 
@@ -329,54 +321,15 @@ int check_if_pid_exists_tcb(int tid)
 			temp = temp -> next;
 	}
 
-	tcb_lock = 0;
+	mutex_unlock(&tcb_lock);
 	return 0;
 }
 
-void push_children(children_list **head,tcb child)
+void free_child_data_structures(tcb child)
 {
-	children_list *tl = calloc(1,sizeof(children_list));
-	tl -> next = *head;
-	tl -> name = child;
-	*head = tl;
-}
-
-void remove_children(children_list **head,tcb child)
-{
-	children_list *temp = *head;
-	children_list *prev = NULL;
-	while(temp -> name != child && temp)
-	{
-		prev = temp;
-		temp = temp -> next;
-	}
-
-	if(prev)
-		prev -> next = temp;
-	else
-		*head = NULL;
-
-	free_child_thread_list(temp);
+	mutex_destroy(&(child -> private_lock));
+	cond_destroy(&(child -> exit_cond));
+	free_pages(child);
 }
 
 
-void free_child_thread_list(children_list * head)
-{
-	children_list * next;
-	while(head)
-	{
-		next = head -> next;
-		free(head);
-		head = next;
-	}
-}
-
-void freeThread(tcb thread)
-{
-	if (thread->waiter != -1) {
-    SIPRINTF("Thread %p exits while waiting on something\n", thread);
-  }
-
-  free_child_thread_list(thread->children);
-  free(thread);
-}

@@ -49,6 +49,7 @@ typedef struct thread_queue
  *  
  *  This contains : 
  *  1. Mutex id to identify mutex object 
+ dd_to
  *  2. Head to track the list of waiting 
  *  thread ID queues 
  *  3. Pointer to next element 
@@ -71,7 +72,6 @@ typedef struct mutex_thread_object
 mutex_thread_object * head_mutex_object = NULL;
 
 int compAndXchg(void *,int,int);
-
 /* Functions */
 
 int mutex_init( mutex_t *mp );

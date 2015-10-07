@@ -8,6 +8,7 @@
 
 typedef struct rwlock {
   /* fill this in */
+  unsigned int rwlock_id;
 } rwlock_t;
 
 #endif /* _RWLOCK_TYPE_H */

@@ -17,7 +17,7 @@
 
 
 /*EDIT: MAKE MALLOC SAFE*/
-#define DEBUG 0
+//#define DEBUG 0
 #include "mutex_private.h"
 
 void debug_mutex_structure()

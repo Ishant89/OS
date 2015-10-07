@@ -29,5 +29,11 @@ int thread_fork(void *stack);
 #define SIPRINTF(...) ((void) 0)
 #endif
 
+/* printf wrapper function */
+#ifndef DEBUG_CRITICAL
+#define ISPRINTF(...) lprintf(__VA_ARGS__)
+#else
+#define ISPRINTF(...) ((void) 0)
+#endif
 
 #endif /* THR_INTERNALS_H */

@@ -60,85 +60,6 @@ semaphore_thread_object *get_semaphore_object_from_sem_id(unsigned int sem_id)
   return NULL;
 }
 
-void add_thread_to_semaphore_queue(semaphore_thread_object *sem_object,int thread_id)
-{
-
-  /* Pack the queue struct to insert */
-  sem_thread_queue *new_element;
-  new_element = calloc(1,sizeof(sem_thread_queue));
-  new_element -> thread_id = thread_id;
-  new_element -> next_thread_id = NULL;
-
-  if(sem_object -> head_queue == NULL)
-  {
-    sem_object -> head_queue = new_element;
-    return;
-  }
-
-  /* Get head of the waiting queue */
-  sem_thread_queue *iterator = sem_object -> head_queue;
-
-  /* Append to end of the queue */
-  while(iterator -> next_thread_id != NULL)
-  {
-    iterator = iterator -> next_thread_id;
-  }
-
-  iterator -> next_thread_id = new_element;
-}
-
-sem_thread_queue *remove_thread_from_start_queue(semaphore_thread_object *sem_object)
-{
-  sem_thread_queue *temp = sem_object -> head_queue;
-
-  if(temp != NULL)
-  {
-    sem_object -> head_queue = temp -> next_thread_id;
-    return temp;
-  }
-
-  return NULL;
-}
-
-int check_thread_in_queue(semaphore_thread_object *sem_object,int thread_id)
-{
-  sem_thread_queue *temp = sem_object -> head_queue;
-
-  while(temp != NULL)
-  {
-    if(temp -> thread_id == thread_id)
-      return 1;
-
-    temp = temp -> next_thread_id;
-  }
-
-  return 0;
-
-}
-
-void print_queue(sem_thread_queue *head)
-{
-  sem_thread_queue *temp = head;
-
-  while(temp != NULL)
-  {
-    SIPRINTF("Thread id : %d Next Thread : %p",temp -> thread_id,temp -> next_thread_id);
-    temp = temp -> next_thread_id;
-  }
-}
-
-void print_semaphore_object_list()
-{
-  semaphore_thread_object *temp = head_semaphore_object;
-
-  while(temp != NULL)
-  {
-    SIPRINTF("-------Semaphore Object %d -------",temp -> semaphore_id);
-    print_queue(temp -> head_queue);
-    SIPRINTF("Count : %d",temp -> count);
-    temp = temp -> next_semaphore_object;
-  }
-}
 
 int sem_init(sem_t *sem,int count)
 {
@@ -152,15 +73,14 @@ int sem_init(sem_t *sem,int count)
     return FAILURE;
 
   new_sem -> semaphore_id = sem_id;
-  new_sem -> head_queue = NULL;
-  new_sem -> lock = 0;
   new_sem -> count = count;
   SIPRINTF("Sem_init : Initializing mutex %p by tid %d",
                                           &(new_sem -> mutex_lock),gettid());
   mutex_init(&(new_sem -> mutex_lock));
+  cond_init(&(new_sem -> cv));
 
   add_semaphore_object_to_list(new_sem);
-  print_semaphore_object_list();
+
   SIPRINTF("Sem_init : Leaving sem_init by tid %d",gettid());
   return SUCCESS;
 }
@@ -168,8 +88,6 @@ int sem_init(sem_t *sem,int count)
 void sem_wait(sem_t *sem)
 {
   SIPRINTF("Sem_wait : Entering sem_wait by tid %d",gettid());
-  /*Deschedule condition */
-  int reject = 0;
   semaphore_thread_object *sem_object;
   sem_object = get_semaphore_object_from_sem_id(GET_SEMAPHORE_ID(sem));
 
@@ -187,43 +105,24 @@ void sem_wait(sem_t *sem)
   /* Acquire exclusive access */
   mutex_lock(&(sem_object -> mutex_lock));
 
+
+  if(sem_object -> count <= 0)
+  {
+    
+    SIPRINTF("Sem_wait : Going into cond_wait %p by tid %d",
+              &(sem_object -> mutex_lock),gettid());
+
+    cond_wait(&(sem_object -> cv),&(sem_object -> mutex_lock));
+
+    SIPRINTF("Sem_wait : Made runnable after cond wait %d",gettid());
+  }
+
   /* Decrement semaphore count */
   (sem_object -> count)--;
   SIPRINTF("Sem_wait : Decremented count : %d by tid %d",
              sem_object -> count,gettid());
 
-  if(sem_object -> count < 0)
-  {
-    int thread_id = gettid();
-    SIPRINTF("Sem_wait : Adding to queue and deschedule thread %d by tid %d",
-             thread_id,gettid());
-    if(check_thread_in_queue(sem_object,thread_id))
-    {
-      SIPRINTF("Sem_wait : Thread already in queue");
-      mutex_unlock(&(sem_object -> mutex_lock));1
-      return ;
-    }
-
-    add_thread_to_semaphore_queue(sem_object,thread_id);
-    print_semaphore_object_list();
-    SIPRINTF("Sem_wait : Release lock with wait %p by tid %d",
-              &(sem_object -> mutex_lock),gettid());
-    mutex_unlock(&(sem_object -> mutex_lock));
-
-    /*Deschedule*/
-    if(deschedule(&reject) < 0)
-    {
-      SIPRINTF("Sem_wait : Count not deschedule thread");
-      return;
-    }
-
-    SIPRINTF("Sem_wait : Made runnable after deschedule %d",gettid());
-  }
-
-  else
-  {
-    mutex_unlock(&(sem_object -> mutex_lock));
-  }
+  mutex_unlock(&(sem_object -> mutex_lock));
 
   SIPRINTF("Leaving sem_wait by tid %d",gettid());
 }
@@ -245,28 +144,14 @@ void sem_signal(sem_t *sem)
   SIPRINTF("Sem_signal : Acquire lock by tid %d",gettid());
   mutex_lock(&(sem_object -> mutex_lock));
 
-  /* Decrement semaphore count */
-  (sem_object -> count)++;
-  SIPRINTF("Sem_signa; : Incremented count : %d by tid %d",
-            sem_object -> count,gettid());
-
   if(sem_object -> count <= 0)
   {
-    SIPRINTF("Sem_signal : Removing from queue and making runnbale %d",gettid());
-    sem_thread_queue *thread = remove_thread_from_start_queue(sem_object);
-    int thread_id = thread -> thread_id;
-    SIPRINTF("Sem_signal : Removed thread %d",thread_id);
-    free(thread);
-    print_semaphore_object_list();
-    if(thread != NULL)
-    {
-      SIPRINTF("Sem_signal : Making runnable thread %d",thread_id);
-      while(make_runnable(thread_id) < 0)
-      {
-        continue;
-      }
-
-    }
+    /* Decrement semaphore count */
+    (sem_object -> count)++;
+    SIPRINTF("Sem_signa; : Incremented count : %d by tid %d",
+             sem_object -> count,gettid());
+    SIPRINTF("Sem_signal : Signalling and making runnable %d",gettid());
+    cond_signal(&(sem_object -> cv));
   }
    SIPRINTF("Sem_signal : Release lock by tid %d",gettid());
    mutex_unlock(&(sem_object -> mutex_lock));
@@ -286,16 +171,10 @@ void sem_destroy(sem_t *sem)
     task_vanish(-2);
   }
 
-  /* Check if threads are not waiting on the queue */
-  if(sem_object -> head_queue != NULL)
-  {
-    SIPRINTF("Sem_destroy : Cannot destroy while threads are in the waiting queue");
-    task_vanish(-2);
-  }
-
   remove_semaphore_object_from_list(sem_object);
+  mutex_destroy(&(sem_object -> mutex_lock));
+  cond_destroy(&(sem_object -> cv));
   free(sem_object);
-  print_semaphore_object_list();
   SIPRINTF("Leaving sem_destroy by tid %d",gettid());
 }
 

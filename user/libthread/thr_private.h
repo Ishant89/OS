@@ -4,6 +4,9 @@
  *         internal to the thread library.
  */
 
+#include <mutex.h>
+#include <cond.h>
+
 #ifndef THR_PRIVATE
 #define THR_PRIVATE
 
@@ -32,8 +35,8 @@ struct tcb {
   int status;
   void* exit_status;
   int waiter;
-  volatile int lock_available;
-  children_list * children;
+  mutex_t private_lock;
+  cond_t exit_cond;
 };
 
 /** @brief word size */
@@ -53,7 +56,7 @@ struct tcb {
 /** @brief Stack size */
 unsigned int stack_size;
 
-volatile int tcb_lock;
+mutex_t tcb_lock;
 
 /** @brief Thread fork system call */
 int thread_fork(void *stack);
@@ -71,13 +74,7 @@ tcb get_tcb_from_kid(int kid);
 
 int check_if_pid_exists_tcb(int tid);
 
-void push_children(children_list **head,tcb child);
-
-void remove_children(children_list **head,tcb child);
-
-void free_child_thread_list(children_list * head);
-
-void freeThread(tcb thread);
+void free_child_data_structures(tcb child);
 
 void remove_tcb_from_list(tcb entry);
 
