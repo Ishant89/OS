@@ -64,6 +64,7 @@ typedef struct mutex_thread_object
 	thread_queue * head_queue;
 	struct mutex_thread_object * next_mutex_object;
 	int lock;
+	int thread_lock_holder;
 } mutex_thread_object;
 
 

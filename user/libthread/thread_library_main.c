@@ -55,6 +55,8 @@ int thr_init(unsigned int size)
 	name->kid = gettid();
 	name->tid = name->kid;
 	name->waiter = -1;
+	mutex_init(&(name -> private_lock));
+	cond_init(&(name -> exit_cond));
 	insert_tcb_list(name);
 	return flag;
 }

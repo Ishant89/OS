@@ -526,7 +526,7 @@ void cond_destroy(cond_t * cv)
 
 	if (cond_obj == NULL)
 	{
-		SIPRINTF("Cond var object not initialized");
+		lprintf("Cond var object not initialized");
 		task_vanish(-2);
 	}
 	/*Take the lock */
@@ -541,7 +541,7 @@ void cond_destroy(cond_t * cv)
 	/* Either lock is still taken and elements are still there */
 	if (lock == 0 || cond_obj->head_queue != NULL)
 	{
-		SIPRINTF("Terminating : Either lock is nt released or elements are there\n");
+		lprintf("Terminating : Either lock is nt released or elements are there\n");
 		/* Change status to macro */
 		task_vanish(-2);
 	}
