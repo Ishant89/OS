@@ -23,7 +23,7 @@
  *  @return Pass/Fail
  */
 
-//#define DEBUG 0
+#define DEBUG 0
 #define DEBUG_CRITICAL 0
 #include "cvar_private.h"
 
@@ -352,7 +352,7 @@ void cond_signal(cond_t * cv )
 	unsigned int cond_id = GET_COND_ID(cv);
 
 	/* Get the thread id  */
-	int thread_id = gettid();
+	//int thread_id = gettid();
 
 	/* Get the condvar object */
 	cond_var_object * cond_obj = get_cond_obj_by_id(cond_id);
@@ -451,7 +451,7 @@ void cond_broadcast(cond_t * cv )
 	unsigned int cond_id = GET_COND_ID(cv);
 
 	/* Get the thread id  */
-	int thread_id = gettid();
+	//int thread_id = gettid();
 
 	/* Get the condvar object */
 	cond_var_object * cond_obj = get_cond_obj_by_id(cond_id);
