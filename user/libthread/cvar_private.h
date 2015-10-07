@@ -43,7 +43,7 @@ typedef struct wait_thread_queue
 typedef struct cond_var_object 
 {
 	unsigned int cond_id;/*ID of the cond var */
-	int cond_lock;/*Lock for the cond objects */
+	mutex_t cond_lock;/*Lock for the cond objects */
 	wait_thread_queue * head_queue;/*Head of the wait queue */
 	mutex_t * mutex_object; /* Associated mutex object */
 	struct cond_var_object * next_cond_object;/* Next cond object */

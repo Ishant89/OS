@@ -141,9 +141,9 @@ int rem_cond_object_by_cond_id(unsigned int cond_id)
 	if (head_cond_object == NULL)
 		return FAIL;
 
-	if (head_cond_object -> next_cond_object == NULL && head_cond_object->cond_id == cond_id)
+	if ( head_cond_object->cond_id == cond_id)
 	{
-		head_cond_object = NULL;
+		head_cond_object = head_cond_object -> next_cond_object;
 		return PASS;
 	}
 	for (temp_obj = head_cond_object; temp_obj->next_cond_object != NULL; 
@@ -209,10 +209,15 @@ int cond_init(cond_t * cv)
 		return FAIL;
 	}
 	cond_obj-> cond_id = cond_id;
-	cond_obj -> cond_lock = LOCK_AVAILABLE;
+	//cond_obj -> cond_lock = LOCK_AVAILABLE;
 	cond_obj -> head_queue = NULL;
 	cond_obj-> mutex_object = NULL;
 	cond_obj -> next_cond_object = NULL;
+	if (mutex_init(&(cond_obj->cond_lock)) < 0)
+	{
+		SIPRINTF("Unable to allocate lock");
+		task_vanish(-2);
+	}
 	
 	/* Check if cond object is already init and reinit again */
 	cond_var_object * existing_obj = get_cond_obj_by_id(cond_id);
@@ -280,12 +285,13 @@ void cond_wait(cond_t * cv, mutex_t*mp)
 	new_thread_request->next_wait_thread = NULL;
 
 	/* Take the lock */
-
+/*
 	while (compAndXchg((void *)&cond_obj->cond_lock,0,1))
 	{
 		continue;
 	}
-	
+*/
+	mutex_lock(&(cond_obj->cond_lock));	
 	SIPRINTF("Lock is with tid %d",gettid());
 	/*Append to the queue */
 
@@ -299,7 +305,8 @@ void cond_wait(cond_t * cv, mutex_t*mp)
 	mutex_unlock(mp);
 
 	/*Release the lock */
-	cond_obj->cond_lock = 0;
+	//cond_obj->cond_lock = 0;
+	mutex_unlock(&(cond_obj->cond_lock));
 	
 	SIPRINTF("Lock is just released by tid %d",gettid());
 	/*EDIT: */
@@ -358,16 +365,19 @@ void cond_signal(cond_t * cv )
 
 	/* Take the lock */
 
-	while (compAndXchg((void *)&cond_obj->cond_lock,0,1))
+	/*while (compAndXchg((void *)&cond_obj->cond_lock,0,1))
 	{
 		continue;
-	}
+	}*/
+
+	mutex_lock(&(cond_obj->cond_lock));
 
 	if (cond_obj -> mutex_object == NULL)
 	{
 		SIPRINTF("None of the mutex objects bound");
 		/*Release the lock */
-		cond_obj->cond_lock = 0;
+		mutex_unlock(&(cond_obj->cond_lock));
+		//cond_obj->cond_lock = 0;
 		return;
 	}
 
@@ -375,7 +385,8 @@ void cond_signal(cond_t * cv )
 	{
 		SIPRINTF("Queue is empty");
 		/*Release the lock */
-		cond_obj->cond_lock = 0;
+		mutex_unlock(&(cond_obj->cond_lock));
+		//cond_obj->cond_lock = 0;
 		return;
 	}
 	
@@ -400,10 +411,11 @@ void cond_signal(cond_t * cv )
 	}
 	SIPRINTF("Made runnable %d by %d",pop_elem->thread_id,thread_id);
 	
-	free(pop_elem);
 	/*Release the lock */
-	cond_obj->cond_lock = 0;
+	mutex_unlock(&(cond_obj->cond_lock));
+	//cond_obj->cond_lock = 0;
     	
+	free(pop_elem);
 	SIPRINTF("Lock is just released by tid %d",gettid());
 	/*EDIT: */
 
@@ -451,17 +463,19 @@ void cond_broadcast(cond_t * cv )
 	}
 
 	/* Take the lock */
-
+/*
 	while (compAndXchg((void *)&cond_obj->cond_lock,0,1))
 	{
 		continue;
 	}
-
+*/
+	mutex_lock(&(cond_obj->cond_lock));
 	if (cond_obj -> mutex_object == NULL)
 	{
 		SIPRINTF("None of the mutex objects found");
 		/*Release the lock */
-		cond_obj->cond_lock = 0;
+		mutex_unlock(&(cond_obj->cond_lock));
+		//cond_obj->cond_lock = 0;
 		return;
 	}
 
@@ -469,7 +483,8 @@ void cond_broadcast(cond_t * cv )
 	{
 		SIPRINTF("Queue is empty");
 		/*Release the lock */
-		cond_obj->cond_lock = 0;
+		mutex_unlock(&(cond_obj->cond_lock));
+		//cond_obj->cond_lock = 0;
 		return;
 	}
 	
@@ -491,7 +506,8 @@ void cond_broadcast(cond_t * cv )
 		free(pop_elem);
 	}
 	/*Release the lock */
-	cond_obj->cond_lock = 0;
+	mutex_unlock(&(cond_obj->cond_lock));
+	//cond_obj->cond_lock = 0;
 	
 	SIPRINTF("Lock is just released by tid %d",gettid());
 	/*EDIT: */
@@ -530,16 +546,18 @@ void cond_destroy(cond_t * cv)
 		task_vanish(-2);
 	}
 	/*Take the lock */
-	while (compAndXchg((void*)&cond_obj->cond_lock,0,1))
+	/*while (compAndXchg((void*)&cond_obj->cond_lock,0,1))
 	{
 		continue;
-	}
+	}*/
+	mutex_lock(&(cond_obj->cond_lock));
 	/* Get the lock status from the queue and use compare excahnge */
-	int lock = cond_obj -> cond_lock;
+	//int lock = cond_obj -> cond_lock;
 	
 
 	/* Either lock is still taken and elements are still there */
-	if (lock == 0 || cond_obj->head_queue != NULL)
+	//if (lock == 0 || cond_obj->head_queue != NULL)
+	if (cond_obj->head_queue != NULL)
 	{
 		lprintf("Terminating : Either lock is nt released or elements are there\n");
 		/* Change status to macro */
@@ -550,13 +568,16 @@ void cond_destroy(cond_t * cv)
 	rem_cond_object_by_cond_id(cond_id);
 
 	/*Release the lock */
-	cond_obj->cond_lock = 0;
+	mutex_unlock(&(cond_obj->cond_lock));
+	//cond_obj->cond_lock = 0;
 	
 	/* Mostly head_queue should be null here */
 	if (cond_obj->head_queue != NULL)
 		free(cond_obj->head_queue);
 
+	/* Destroy the mutex */
 
+	mutex_destroy(&(cond_obj->cond_lock));
 	/* Remove the mutex object */
 	free(cond_obj);
 	/*EDIT: To be removed */

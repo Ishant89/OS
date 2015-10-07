@@ -69,9 +69,10 @@ int rem_mutex_object_by_mutex_id(unsigned int mutex_id)
 	if (head_mutex_object == NULL)
 		return FAIL;
 
-	if (head_mutex_object->mutex_id == mutex_id)
+	if (head_mutex_object -> next_mutex_object == NULL 
+			&& head_mutex_object->mutex_id == mutex_id)
 	{
-		head_mutex_object = head_mutex_object -> next_mutex_object;
+		head_mutex_object = NULL;
 		return PASS;
 	}
 	for (temp_obj = head_mutex_object; temp_obj->next_mutex_object != NULL; 
@@ -233,6 +234,7 @@ int mutex_init(mutex_t * mp)
 	mutex_obj -> mutex_id = mutex_id;
 	mutex_obj -> head_queue = NULL;
 	mutex_obj -> lock = 0;//Change with mutex lock
+	mutex_obj -> thread_lock_holder = -1;//No thread locking the hold
 	
 	/* Adding object to the global list of mutex objs*/
 	add_mutex_object_list(mutex_obj);
@@ -266,6 +268,8 @@ void mutex_lock(mutex_t * mp)
 	unsigned int mutex_id = GET_MUTEX_ID(mp);
 	/* Get the thread id of the thread */
 	int thread_id = gettid();
+	/* thread queue */
+	thread_queue * temp;
 
 	/* Get the mutex object */
 	mutex_thread_object * mutex_identifier = 
@@ -315,9 +319,20 @@ void mutex_lock(mutex_t * mp)
 		if_first_thread_in_queue = 1;
 	}
 
-	/* Critical section */
-	append_thread_id_to_queue(&(mutex_identifier->head_queue),new_thread_request);
 
+	/* If thread is the first element,it should remove itself from the list*/
+	if (mutex_identifier->thread_lock_holder==-1)
+	{
+		mutex_identifier->thread_lock_holder = thread_id;
+
+	} else 
+	{
+	/* Critical section */
+		append_thread_id_to_queue(&(mutex_identifier->head_queue),
+				new_thread_request);
+		/*Handling when queue is null and there is a lock holder*/
+		if_first_thread_in_queue = 0;
+	}
 
 	/*Release the lock */
 	mutex_identifier->lock = 0;
@@ -325,7 +340,7 @@ void mutex_lock(mutex_t * mp)
 	SIPRINTF("Lock is just released by tid %d",gettid());
 	/*EDIT: */
 
-	//debug_mutex_structure();
+	debug_mutex_structure();
 
 	if (!if_first_thread_in_queue)
 	{
@@ -374,23 +389,17 @@ void mutex_unlock(mutex_t *mp)
 	}
 
 
-	while (compAndXchg((void *)&mutex_identifier->lock,0,1))
-	{
-		continue;
-	}	
 
 	/* Check if the mutex unlock is not invoked by the thread id other than the 
 	 * one keeping the lock */
 	SIPRINTF("Lock is with tid %d",gettid());
-	if (mutex_identifier -> head_queue -> thread_id != gettid())
+	if (mutex_identifier -> thread_lock_holder != gettid())
 	{
 		SIPRINTF("Some other thread is trying to unlock ");
 		task_vanish(-2);
 		return ;
 	}	
 
-	/*Object to be removed */
-	thread_queue * temp = remove_thread_id_from_queue(&(mutex_identifier->head_queue));
 
 	/* Get the head of the thread queue */
 	thread_queue * head_queue = mutex_identifier -> head_queue;
@@ -403,7 +412,6 @@ void mutex_unlock(mutex_t *mp)
 			continue;
 		}
 	}
-	mutex_identifier->lock = 0;
 
 	SIPRINTF("Lock is just released by tid %d",gettid());
 	/*EDIT: To be removed */
@@ -433,7 +441,7 @@ void mutex_destroy(mutex_t *mp)
 
 	if (mutex_identifier == NULL)
 	{
-		lprintf("Use mutex init first\n");
+		SIPRINTF("Use mutex init first\n");
 		task_vanish(-2);
 		return;
 	}
@@ -451,7 +459,7 @@ void mutex_destroy(mutex_t *mp)
 	/* Either lock is still taken and elements are still there */
 	if (lock == 0 || num_elems != 0)
 	{
-		lprintf("Terminating : Either lock is nt released or elements are there\n");
+		SIPRINTF("Terminating : Either lock is nt released or elements are there\n");
 		/* Change status to macro */
 		task_vanish(-2);
 		return;
