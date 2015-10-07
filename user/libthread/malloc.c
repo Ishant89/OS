@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <types.h>
 #include <stddef.h>
+#include <mutex.h>
 #include <compAndXchg.h>
 
 /*EDIT */
@@ -19,6 +20,7 @@
 /* Lock for malloc */
 int alloc_lock = 0 ;
 
+
 void *malloc(size_t __size)
 {
 	/* Check and take the lock */
@@ -29,7 +31,7 @@ void *malloc(size_t __size)
   SIPRINTF("Entering malloc by tid %d request size %d",gettid(),__size);
   void * ret_val = _malloc(__size);
   /* Release the locj */
-  alloc_lock = 0 ;
+  alloc_lock = 0;
   SIPRINTF("Exiting malloc by tid %d and mem  %p",gettid(),ret_val);
   return ret_val;
 }
@@ -43,7 +45,7 @@ void *calloc(size_t __nelt, size_t __eltsize)
   SIPRINTF("Entering calloc by tid %d request size %d",gettid(),__nelt);
   void * ret_val = _calloc(__nelt, __eltsize);
   /* Release the locj */
-  alloc_lock = 0 ;
+  alloc_lock = 0;
   SIPRINTF("Exiting calloc by tid %d and mem  %p",gettid(),ret_val);
   return ret_val;
 }

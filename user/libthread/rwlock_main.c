@@ -79,10 +79,9 @@ int rem_rwlock_object_by_rwlock_id(unsigned int rwlock_id)
     if (head_rwlock_object == NULL)
         return FAIL;
 
-    if (head_rwlock_object -> next_rwlock_object == NULL 
-            && head_rwlock_object->rwlock_id == rwlock_id)
+    if (head_rwlock_object->rwlock_id == rwlock_id)
     {
-        head_rwlock_object = NULL;
+        head_rwlock_object = head_rwlock_object -> next_rwlock_object;
         return PASS;
     }
     for (temp_obj = head_rwlock_object; temp_obj->next_rwlock_object != NULL; 

@@ -15,7 +15,7 @@
  *
  *	@bug 
  */
-#define DEBUG 0
+//#define DEBUG 0
 #include <thr_internals.h>
 #include "thr_private.h"
 #include "mm_new_pages.h"

@@ -69,10 +69,9 @@ int rem_mutex_object_by_mutex_id(unsigned int mutex_id)
 	if (head_mutex_object == NULL)
 		return FAIL;
 
-	if (head_mutex_object -> next_mutex_object == NULL 
-			&& head_mutex_object->mutex_id == mutex_id)
+	if (head_mutex_object->mutex_id == mutex_id)
 	{
-		head_mutex_object = NULL;
+		head_mutex_object = head_mutex_object -> next_mutex_object;
 		return PASS;
 	}
 	for (temp_obj = head_mutex_object; temp_obj->next_mutex_object != NULL; 
@@ -326,7 +325,7 @@ void mutex_lock(mutex_t * mp)
 	SIPRINTF("Lock is just released by tid %d",gettid());
 	/*EDIT: */
 
-	debug_mutex_structure();
+	//debug_mutex_structure();
 
 	if (!if_first_thread_in_queue)
 	{
