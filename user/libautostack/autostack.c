@@ -13,8 +13,8 @@
 
 #define DEBUG 0
 #include <autostack.h>
-#include <thr_internals.h>
 #include <simics.h>
+#include <thr_internals.h>
 #include <syscall.h>
 #include <stdlib.h>
 

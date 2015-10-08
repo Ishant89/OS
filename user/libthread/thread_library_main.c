@@ -23,7 +23,7 @@
 #include <syscall.h>
 #include <stdlib.h>
 #include <simics.h>
-
+#include<thread_crash_handler.h>
 
 int thr_init(unsigned int size)
 {
@@ -37,7 +37,6 @@ int thr_init(unsigned int size)
 		stack_size = size;
 		flag = SUCCESS;
 	}
-
 	else
 		flag = ERROR;
 
@@ -50,6 +49,7 @@ int thr_init(unsigned int size)
 		return THREAD_NOT_CREATED;
 	}
 
+	
 	tcb name = (tcb) tcb_mem;
 	/* EDIT: name-> sp, name->func, name->arg and name->waiter to be decided */
 	name->kid = gettid();
@@ -91,7 +91,7 @@ int thr_create( func handler, void * arg )
 		SIPRINTF("Exiting thr_create with error : Could not allocate TCB and stack for thread\n");
 		return THREAD_NOT_CREATED;
 	}
-
+	
 	/* TCB done */
 	register tcb name = (tcb) stack_tcb_mem;
 	name -> sp = (void*)((unsigned int)stack_tcb_mem + stack_size + TCB_SIZE);
@@ -105,6 +105,12 @@ int thr_create( func handler, void * arg )
 	/* If child call the handler */
 	if (!pid)
 	{
+		/* Install the thread crash handler */
+		if (install_thread_crash_handler() < 0)
+		{
+			SIPRINTF("Unable to install thread crash handler");
+			return ERROR;
+		}
 		int my_pid = gettid();
 		SIPRINTF("In thr_create and in child :%d",my_pid);
 		int status;
