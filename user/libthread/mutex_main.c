@@ -232,6 +232,7 @@ int mutex_init(mutex_t * mp)
 	mutex_obj -> head_queue = NULL;
 	mutex_obj -> lock_owner = 0;
 	mutex_obj -> lock = 0;//Change with mutex lock
+	mutex_obj -> unlock_flag = 0;//Change with mutex lock
 	
 	/* Adding object to the global list of mutex objs*/
 	add_mutex_object_list(mutex_obj);
@@ -263,6 +264,7 @@ void mutex_lock(mutex_t * mp)
 	SIPRINTF("Entering mutex lock id:%x by tid %d",(unsigned int)mp,gettid());
 	/*Deschedule condition */
 	int reject = 0;
+	thread_queue * head_queue;
 	/* get the mutex id from the structure */
 	unsigned int mutex_id = GET_MUTEX_ID(mp);
 	/* Get the thread id of the thread */
@@ -279,18 +281,8 @@ void mutex_lock(mutex_t * mp)
 		return;
 	}
 
-	/* Get the head of the thread queue */
-//	thread_queue * head_queue = mutex_identifier -> head_queue;
 
-	/* Verify if same thread is not issuing mutex_lock again*/
-	/*
-	if (check_if_thread_in_queue(&head_queue,thread_id) == PASS ||
-			mutex_identifier-> lock_owner == thread_id)
-	{
-		SIPRINTF("Thread already in queue \n");
-		return ;
-	}
-*/
+
 	
 
 	/* Create a thread structure to be added to head_queue */
@@ -299,6 +291,12 @@ void mutex_lock(mutex_t * mp)
 	new_thread_request.thread_id = thread_id;
 	new_thread_request.next_thread_id = NULL;
 		
+	/* If unlock flag is set, don't let other threads to contend 
+	 * for queue lock */
+	while(mutex_identifier->unlock_flag)
+	{
+		continue;
+	}
 	/* EDIT:Change the lock with compare & exchange or
 	 * compare value & swap */
 	while (compAndXchg((void*)&mutex_identifier->lock,0,1))
@@ -310,7 +308,17 @@ void mutex_lock(mutex_t * mp)
 	/*Get the number of thread elements */
 	/*int num_elems = get_number_elements_queue(&mutex_identifier -> head_queue);
 */
+	/* Get the head of the thread queue */
+	head_queue = mutex_identifier -> head_queue;
 
+	/* Verify if same thread is not issuing mutex_lock again*/
+	
+	if (check_if_thread_in_queue(&head_queue,thread_id) == PASS ||
+			mutex_identifier-> lock_owner == thread_id)
+	{
+		SIPRINTF("Thread already in queue \n");
+		return ;
+	}
 	/* Set the first tid in the flag queue */
 	if (mutex_identifier->lock_owner == 0)
 	{
@@ -338,17 +346,16 @@ void mutex_lock(mutex_t * mp)
 	{
 		return;
 	}
-	mutex_identifier-> lock_owner = thread_id;
-	while (compAndXchg((void*)&mutex_identifier->lock,0,1))
+	/*while (compAndXchg((void*)&mutex_identifier->lock,0,1))
 	{
 		continue;
-	}	
+	}*/	
 	SIPRINTF("Waking up from  mutex lock id: %x by tid %d",mutex_id,gettid());
 	/*Object to be removed */
-	remove_thread_id_from_queue(
-			&(mutex_identifier->head_queue));
+	/*remove_thread_id_from_queue(
+			&(mutex_identifier->head_queue));*/
 	/*Release the lock */
-	mutex_identifier->lock = 0;
+	/*mutex_identifier->lock = 0;*/
 
 
 	debug_mutex_structure();
@@ -375,6 +382,7 @@ void mutex_unlock(mutex_t *mp)
 	SIPRINTF("Entering mutex unlock id:%x by tid %d",(unsigned int)mp,gettid());
 	/* get the mutex id from the structure */
 	unsigned int mutex_id = GET_MUTEX_ID(mp);
+	unsigned int head_id;
 
 	/* Get the mutex object */
 	mutex_t * mutex_identifier = 
@@ -389,7 +397,9 @@ void mutex_unlock(mutex_t *mp)
 		return;
 	}
 
+	/* Registering interest for queue lock */	
 
+	mutex_identifier -> unlock_flag = 1;
 	while (compAndXchg((void *)&mutex_identifier->lock,0,1))
 	{
 		continue;
@@ -405,11 +415,14 @@ void mutex_unlock(mutex_t *mp)
 		return ;
 	}*/	
 
-
 	if (mutex_identifier->head_queue != NULL)
 	{
-		SIPRINTF("%d made %d runnable",gettid(),mutex_identifier->head_queue->thread_id);
-		while(make_runnable(mutex_identifier->head_queue->thread_id) < 0)
+		head_id = mutex_identifier->head_queue->thread_id;
+		remove_thread_id_from_queue(
+			&(mutex_identifier->head_queue));
+		SIPRINTF("%d made %d runnable",gettid(),head_id);
+		mutex_identifier-> lock_owner = head_id;
+		while(make_runnable(head_id) < 0)
 		{
 			continue;
 		}
@@ -417,6 +430,8 @@ void mutex_unlock(mutex_t *mp)
 	{
 		mutex_identifier->lock_owner = 0;
 	}
+	/*Deregister interest*/
+	mutex_identifier -> unlock_flag = 0;
 	mutex_identifier->lock = 0;
 
 	SIPRINTF("Lock is just released by tid %d",gettid());

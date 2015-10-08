@@ -28,6 +28,7 @@ typedef struct mutex {
 	struct mutex * next_mutex_object;
 	int lock;
 	int lock_owner;
+	int unlock_flag;
 } mutex_t;
 
 #endif /* _MUTEX_TYPE_H */
