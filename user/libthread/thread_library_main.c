@@ -15,6 +15,7 @@
  *
  *	@bug 
  */
+
 #define DEBUG 0
 #include <thr_internals.h>
 #include "thr_private.h"
@@ -27,8 +28,13 @@
 
 int thr_init(unsigned int size)
 {
+	SIPRINTF("Entering thr init by id: %d",
+			            gettid());
+	/* Init malloc lock */
+	mutex_init(&alloc_lock);
 	mm_init_new_pages(size);
 	mutex_init(&(tcb_lock));
+	SIPRINTF("Mutex for tcb lock is id: %x",(unsigned int)&tcb_lock);
 	int flag;
 	/* Stack Size */
 	/* Check if size is multiple of PAGE_SIZE*/ 
@@ -56,8 +62,12 @@ int thr_init(unsigned int size)
 	name->tid = name->kid;
 	name->waiter = -1;
 	mutex_init(&(name -> private_lock));
+	SIPRINTF("Mutex for private lock is id: %x",
+			(unsigned int)&name->private_lock);
 	cond_init(&(name -> exit_cond));
 	insert_tcb_list(name);
+	SIPRINTF("Exiting thr init by id: %d",
+			            gettid());
 	return flag;
 }
 
@@ -78,7 +88,7 @@ typedef void *(*func)(void*) ;
 
 int thr_create( func handler, void * arg )
 {
-	SIPRINTF("Entering thr create");
+	SIPRINTF("Entering thr create by id: %d",gettid());
 	/* Create stack for the thread */
 	/*EDIT: Replace 1 with macro */
 	
@@ -99,6 +109,8 @@ int thr_create( func handler, void * arg )
 	name -> arg = arg;
 	name -> waiter = -1;
 	mutex_init(&(name -> private_lock));
+	SIPRINTF("Mutex for private lock is id: %x",
+			(unsigned int)&name->private_lock);
 	cond_init(&(name -> exit_cond));
 	/*Create kernel thread */
 	int pid = thread_fork(name->sp);
@@ -106,11 +118,11 @@ int thr_create( func handler, void * arg )
 	if (!pid)
 	{
 		/* Install the thread crash handler */
-		if (install_thread_crash_handler() < 0)
+		/*if (install_thread_crash_handler() < 0)
 		{
 			SIPRINTF("Unable to install thread crash handler");
 			return ERROR;
-		}
+		}*/
 		int my_pid = gettid();
 		SIPRINTF("In thr_create and in child :%d",my_pid);
 		int status;
@@ -127,7 +139,8 @@ int thr_create( func handler, void * arg )
 	name->tid = pid;
 	insert_tcb_list(name);
 	print_tcb_list();
-	SIPRINTF("Exting thr_creat with Success : Done creating thread: %d",pid);
+SIPRINTF("Exting thr_creat by id:%d with Success : Done creating thread: %d"
+			,gettid(),pid);
 	return pid;
 }
 
@@ -147,7 +160,8 @@ void print_tcb_list()
 
 int thr_join( int tid, void **statusp)
 {
-	SIPRINTF("Entring join with tid: %d",tid);
+	SIPRINTF("Entring join by id :%d for tid: %d"
+			,gettid(),tid);
 
 	tcb child = get_tcb_from_tid(tid);
 

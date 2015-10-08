@@ -37,14 +37,14 @@
 
 /** @brief Get the mutex id from the structure */
 
-#define GET_MUTEX_ID(mp) ((unsigned int)(&(mp->mutex_id)))
-
+#define GET_MUTEX_ID(mp) (unsigned int)(mp)
+/*
 typedef struct thread_queue 
 {
 	int thread_id;
 	struct thread_queue * next_thread_id;
 } thread_queue;
-
+*/
 /** @brief Mutex thread objects 
  *  
  *  This contains : 
@@ -56,7 +56,7 @@ typedef struct thread_queue
  *
  *  4. Lock for that mutex object
  */
-
+/*
 
 typedef struct mutex_thread_object
 {
@@ -66,11 +66,11 @@ typedef struct mutex_thread_object
 	int lock;
 	int thread_lock_holder;
 } mutex_thread_object;
-
+*/
 
 /** @brief List of mutex objects */
 
-mutex_thread_object * head_mutex_object = NULL;
+mutex_t * head_mutex_object = NULL;
 
 int compAndXchg(void *,int,int);
 /* Functions */

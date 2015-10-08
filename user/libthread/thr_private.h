@@ -4,8 +4,8 @@
  *         internal to the thread library.
  */
 
-#include <mutex.h>
 #include <cond.h>
+#include <mutex.h>
 
 #ifndef THR_PRIVATE
 #define THR_PRIVATE
@@ -35,8 +35,8 @@ struct tcb {
   int status;
   void* exit_status;
   int waiter;
-  mutex_t private_lock;
-  cond_t exit_cond;
+  mutex_t  private_lock;
+  cond_t  exit_cond;
 };
 
 /** @brief word size */

@@ -7,7 +7,7 @@
  *  @author Ishant & Shelton
  *  @bug No known bugs
  */
-
+#define DEBUG 0
 #include<syscall.h>
 #include<malloc.h>
 
