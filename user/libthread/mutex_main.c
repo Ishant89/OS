@@ -435,9 +435,9 @@ void mutex_unlock(mutex_t *mp)
 		temp_queue= remove_thread_id_from_queue(
 			&(mutex_identifier->head_queue));
 		ISPRINTF("%d made %d runnable for %p",gettid(),head_id,mp);
+		mutex_identifier-> lock_owner = head_id;
 		temp_queue->reject = 1;
 		make_runnable(head_id) ;
-		mutex_identifier-> lock_owner = head_id;
 	} else 
 	{
 		mutex_identifier->lock_owner = -1;
