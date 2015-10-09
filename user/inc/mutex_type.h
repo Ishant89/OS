@@ -8,6 +8,7 @@
 typedef struct thread_queue 
 {
 	int thread_id;
+	int reject;
 	struct thread_queue * next_thread_id;
 } thread_queue;
 

@@ -5,7 +5,13 @@
 #ifndef _COND_TYPE_H
 #define _COND_TYPE_H
 
-
+/** @brief Struct for waiting thread queue */
+/*typedef struct wait_thread_queue
+{
+   	int thread_id;
+	struct wait_thread_queue * next_wait_thread;
+} wait_thread_queue;
+*/
 typedef struct cond {
   /* fill this in */
 	unsigned int cond_id;

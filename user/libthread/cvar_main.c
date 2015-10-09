@@ -409,7 +409,7 @@ void cond_signal(cond_t * cv )
 	{
 		continue;
 	}
-	SIPRINTF("Made runnable %d by %d",pop_elem->thread_id,thread_id);
+	SIPRINTF("Cond sign:Made runnable %d by %d",pop_elem->thread_id,thread_id);
 	
 	/*Release the lock */
 	mutex_unlock(&(cond_obj->cond_lock));

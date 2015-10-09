@@ -18,6 +18,7 @@
 
 /*EDIT: MAKE MALLOC SAFE*/
 #define DEBUG 0
+#define DEBUG_CRITICAL 0
 #include "mutex_private.h"
 
 void debug_mutex_structure()
@@ -230,15 +231,14 @@ int mutex_init(mutex_t * mp)
 
 	mutex_obj -> mutex_id = mutex_id;
 	mutex_obj -> head_queue = NULL;
-	mutex_obj -> lock_owner = 0;
+	mutex_obj -> lock_owner = -1;
 	mutex_obj -> lock = 0;//Change with mutex lock
 	mutex_obj -> unlock_flag = 0;//Change with mutex lock
 	
 	/* Adding object to the global list of mutex objs*/
-	add_mutex_object_list(mutex_obj);
+	//add_mutex_object_list(mutex_obj);
 
 	/*EDIT: TO be removed*/
-	debug_mutex_structure();
 	SIPRINTF("Exiting mutex init by id: %d with params: %x",
 			gettid(),(unsigned int)mp);
 	return PASS;	
@@ -262,17 +262,16 @@ int mutex_init(mutex_t * mp)
 void mutex_lock(mutex_t * mp)
 {
 	SIPRINTF("Entering mutex lock id:%x by tid %d",(unsigned int)mp,gettid());
-	/*Deschedule condition */
-	int reject = 0;
-	thread_queue * head_queue;
+	//int reject=0;
+	//thread_queue * head_queue;
 	/* get the mutex id from the structure */
-	unsigned int mutex_id = GET_MUTEX_ID(mp);
+	//unsigned int mutex_id = GET_MUTEX_ID(mp);
 	/* Get the thread id of the thread */
 	int thread_id = gettid();
 
 	/* Get the mutex object */
-	mutex_t * mutex_identifier = 
-		get_mutex_object_by_mutex_id(mutex_id);
+	mutex_t * mutex_identifier = mp;
+	//	get_mutex_object_by_mutex_id(mutex_id);
 
 	if ( mutex_identifier == NULL)
 	{
@@ -290,18 +289,19 @@ void mutex_lock(mutex_t * mp)
 	
 	new_thread_request.thread_id = thread_id;
 	new_thread_request.next_thread_id = NULL;
+	new_thread_request.reject = 0;
 		
 	/* If unlock flag is set, don't let other threads to contend 
 	 * for queue lock */
 	while(mutex_identifier->unlock_flag)
 	{
-		continue;
+		yield(mutex_identifier->lock_owner);
 	}
 	/* EDIT:Change the lock with compare & exchange or
 	 * compare value & swap */
 	while (compAndXchg((void*)&mutex_identifier->lock,0,1))
 	{
-		continue;
+		yield(mutex_identifier->lock_owner);
 	}	
 
 	SIPRINTF("Lock is with tid %d",gettid());
@@ -309,22 +309,26 @@ void mutex_lock(mutex_t * mp)
 	/*int num_elems = get_number_elements_queue(&mutex_identifier -> head_queue);
 */
 	/* Get the head of the thread queue */
-	head_queue = mutex_identifier -> head_queue;
+
+	
+	//head_queue = mutex_identifier -> head_queue;
 
 	/* Verify if same thread is not issuing mutex_lock again*/
-	
+	/*
 	if (check_if_thread_in_queue(&head_queue,thread_id) == PASS ||
 			mutex_identifier-> lock_owner == thread_id)
 	{
 		SIPRINTF("Thread already in queue \n");
 		return ;
 	}
+*/
 	/* Set the first tid in the flag queue */
-	if (mutex_identifier->lock_owner == 0)
+	if (mutex_identifier->lock_owner == -1)
 	{
 		mutex_identifier-> lock_owner = thread_id;
 		/*Release the lock */
 		mutex_identifier->lock = 0;
+		ISPRINTF("Lock owned by tid : %d for %p",thread_id,mp);
 		return;
 	} 
 	
@@ -332,7 +336,6 @@ void mutex_lock(mutex_t * mp)
 	append_thread_id_to_queue(&(mutex_identifier->head_queue),
 		&new_thread_request);
 	
-
 	/*Release the lock */
 	mutex_identifier->lock = 0;
 
@@ -341,25 +344,35 @@ void mutex_lock(mutex_t * mp)
 
 
 	/*Deschedule if not first element in the queue */
-	SIPRINTF("TID is descheduled %d",gettid());
-	if(deschedule(&reject) < 0)
+	ISPRINTF("TIDd is descheduled %d for %p and lo: %d",gettid(),mp
+			,mutex_identifier-> lock_owner);
+	//reject = mutex_identifier->lock_owner == thread_id;
+	while(new_thread_request.reject != 1 || mutex_identifier-> lock_owner != thread_id)
 	{
-		return;
+		deschedule(&new_thread_request.reject);
 	}
+
 	/*while (compAndXchg((void*)&mutex_identifier->lock,0,1))
 	{
 		continue;
 	}*/	
-	SIPRINTF("Waking up from  mutex lock id: %x by tid %d",mutex_id,gettid());
+	SIPRINTF("Waking up from  mutex lock id: %p by tid %d",mp,gettid());
 	/*Object to be removed */
-	/*remove_thread_id_from_queue(
-			&(mutex_identifier->head_queue));*/
+/*	
+	while (compAndXchg((void*)&mutex_identifier->lock,0,1))
+			
+	{
+		continue;
+	}
+	remove_thread_id_from_queue(
+			&(mutex_identifier->head_queue));
+*/
 	/*Release the lock */
-	/*mutex_identifier->lock = 0;*/
-
-
-	debug_mutex_structure();
-	SIPRINTF("Exiting mutex lock id: %x by tid %d",mutex_id,gettid());
+//	mutex_identifier->lock = 0;
+	ISPRINTF("TIDr is rescheduled %d for %p and lo:%d",gettid(),mp
+			,mutex_identifier-> lock_owner);
+	//while(mutex_identifier->lock_owner!=thread_id);
+	SIPRINTF("Exiting mutex lock id: %p by tid %d",mp,gettid());
 }
 
 
@@ -381,12 +394,13 @@ void mutex_unlock(mutex_t *mp)
 {
 	SIPRINTF("Entering mutex unlock id:%x by tid %d",(unsigned int)mp,gettid());
 	/* get the mutex id from the structure */
-	unsigned int mutex_id = GET_MUTEX_ID(mp);
+	//unsigned int mutex_id = GET_MUTEX_ID(mp);
 	unsigned int head_id;
+	thread_queue * temp_queue;
 
 	/* Get the mutex object */
-	mutex_t * mutex_identifier = 
-		get_mutex_object_by_mutex_id(mutex_id);
+	mutex_t * mutex_identifier = mp;
+	//	get_mutex_object_by_mutex_id(mutex_id);
 
 	/* EDIT:Change the lock with compare & exchange or 
 	 * compare value & swap */
@@ -399,10 +413,10 @@ void mutex_unlock(mutex_t *mp)
 
 	/* Registering interest for queue lock */	
 
-	mutex_identifier -> unlock_flag = 1;
+	mutex_identifier -> unlock_flag++;
 	while (compAndXchg((void *)&mutex_identifier->lock,0,1))
 	{
-		continue;
+		yield(mutex_identifier->lock_owner);
 	}	
 
 	/* Check if the mutex unlock is not invoked by the thread id other than the 
@@ -418,27 +432,24 @@ void mutex_unlock(mutex_t *mp)
 	if (mutex_identifier->head_queue != NULL)
 	{
 		head_id = mutex_identifier->head_queue->thread_id;
-		remove_thread_id_from_queue(
+		temp_queue= remove_thread_id_from_queue(
 			&(mutex_identifier->head_queue));
-		SIPRINTF("%d made %d runnable",gettid(),head_id);
+		ISPRINTF("%d made %d runnable for %p",gettid(),head_id,mp);
+		temp_queue->reject = 1;
+		make_runnable(head_id) ;
 		mutex_identifier-> lock_owner = head_id;
-		while(make_runnable(head_id) < 0)
-		{
-			continue;
-		}
 	} else 
 	{
-		mutex_identifier->lock_owner = 0;
+		mutex_identifier->lock_owner = -1;
 	}
 	/*Deregister interest*/
-	mutex_identifier -> unlock_flag = 0;
+	mutex_identifier -> unlock_flag--;
 	mutex_identifier->lock = 0;
 
 	SIPRINTF("Lock is just released by tid %d",gettid());
 	/*EDIT: To be removed */
-	//debug_mutex_structure();
 	/* Free the temp thread queue entry for the popped entry*/
-	SIPRINTF("Exiting mutex unlock id:%x by tid %d",mutex_id,gettid());
+	SIPRINTF("Exiting mutex unlock id:%p by tid %d",mp,gettid());
 	
 }
 
@@ -454,11 +465,11 @@ void mutex_destroy(mutex_t *mp)
 {
 	SIPRINTF("Entering mutex destroy id:%x by tid %d",(unsigned int)mp,gettid());
 	/* get the mutex id from the structure */
-	unsigned int mutex_id = GET_MUTEX_ID(mp);
+	//unsigned int mutex_id = GET_MUTEX_ID(mp);
 
 	/* Get the mutex object */
-	mutex_t * mutex_identifier = 
-		get_mutex_object_by_mutex_id(mutex_id);
+	mutex_t * mutex_identifier = mp ;
+	//	get_mutex_object_by_mutex_id(mutex_id);
 
 	if (mutex_identifier == NULL)
 	{
@@ -473,7 +484,7 @@ void mutex_destroy(mutex_t *mp)
 	}*/
 
 	/* Either lock is still taken and elements are still there */
-	if (mutex_identifier-> lock_owner !=0)
+	if (mutex_identifier-> lock_owner !=-1)
 	{
 		lprintf("Terminating : Either lock is nt released or elements are there\n");
 		/* Change status to macro */
@@ -481,14 +492,12 @@ void mutex_destroy(mutex_t *mp)
 		return;
 	}
 
-	debug_mutex_structure();
 	/* Remove the mutex object by its id*/
-	rem_mutex_object_by_mutex_id(mutex_id);
+	//rem_mutex_object_by_mutex_id(mutex_id);
 
 	/*Release the lock */
 	mutex_identifier->lock = 0;
 
 	/*EDIT: To be removed */
-	debug_mutex_structure();
 	SIPRINTF("Exiting mutex destroy id:%x by tid %d",(unsigned int)mp,gettid());
 }

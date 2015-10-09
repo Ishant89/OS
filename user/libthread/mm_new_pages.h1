@@ -12,8 +12,6 @@
 
 /* Error codes */
 
-#include <mutex.h>
-
 typedef unsigned int size_t ;
 
 #define NEW_PAGES_ERROR -1
@@ -62,7 +60,7 @@ void * freeListEnd;
 int err_num;
 
 /* lock for allocator */
-mutex_t new_pages_lock;
+int new_pages_lock;
 
 /* Size of free list */
 size_t freeListSize;
