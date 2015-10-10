@@ -31,8 +31,9 @@ struct tcb {
   int status;
   void* exit_status;
   int waiter;
-  mutex_t  private_lock;
-  cond_t  exit_cond;
+  //mutex_t  private_lock;
+  int  private_lock;
+  //cond_t  exit_cond;
 };
 
 
@@ -85,7 +86,8 @@ void remove_tcb_from_list(tcb entry);
 
 void print_tcb_list();
 
-void vanish_thread_exit(mutex_t *lock_addr);
+//void vanish_thread_exit(mutex_t *lock_addr);
+void vanish_thread_exit(int*lock_addr);
 
 int compAndXchg(void *,int,int);
 

@@ -29,7 +29,7 @@
 
 int thr_init(unsigned int size)
 {
-	mutex_init(&(alloc_lock));
+	//mutex_init(&(alloc_lock));
 	SIPRINTF("Entering thr init by id: %d",
 			            gettid());
 	/* Init malloc lock */
@@ -67,10 +67,10 @@ int thr_init(unsigned int size)
 	name -> crash_handler_sp = (void*)((unsigned int)tcb_mem + TCB_SIZE + STACK_BUFFER + CRASH_HANDLER_STACK_SIZE);
 	/* Install thread crash handler for the parent */
 	install_thread_crash_handler(name -> crash_handler_sp);
-	mutex_init(&(name -> private_lock));
+	//mutex_init(&(name -> private_lock));
 	SIPRINTF("Mutex for private lock is id: %x",
 			(unsigned int)&name->private_lock);
-	cond_init(&(name -> exit_cond));
+	//cond_init(&(name -> exit_cond));
 	insert_tcb_list(name);
 	SIPRINTF("Exiting thr init by id: %d",
 			            gettid());
@@ -116,10 +116,10 @@ int thr_create( func handler, void * arg )
 	name -> arg = arg;
 	name -> waiter = -1;
 	name -> crash_handler_sp = (void*)((unsigned int)stack_tcb_mem + TCB_SIZE + STACK_BUFFER + stack_size + CRASH_HANDLER_STACK_SIZE);
-	mutex_init(&(name -> private_lock));
+	//mutex_init(&(name -> private_lock));
 	SIPRINTF("Mutex for private lock is id: %x",
 			(unsigned int)&name->private_lock);
-	cond_init(&(name -> exit_cond));
+	//cond_init(&(name -> exit_cond));
 	/*Create kernel thread */
 	int pid = thread_fork(name->sp);
 	/* If child call the handler */
@@ -170,7 +170,7 @@ int thr_join( int tid, void **statusp)
 {
 	SIPRINTF("Entring join by id :%d for tid: %d"
 			,gettid(),tid);
-
+	int reject =0;
 	tcb child = get_tcb_from_tid(tid);
 
 	if(child == NULL)
@@ -179,38 +179,49 @@ int thr_join( int tid, void **statusp)
 		return THREAD_NOT_CREATED;
 	}
 
-	mutex_lock(&(child -> private_lock));
-
+	//mutex_lock(&(child -> private_lock));
+	while(compAndXchg((void *)&(child -> private_lock),0,1))
+	{
+		yield(tid);
+	}
 	if(isDone(child))
 	{
 		if(statusp != NULL)
 		 *statusp = child -> exit_status;
 		remove_tcb_from_list(child);
-		mutex_unlock(&(child -> private_lock));
+		//mutex_unlock(&(child -> private_lock));
+		child->private_lock = 0;
 	  free_child_data_structures(child);
 		SIPRINTF("Exiting join  with success without wait and tid: %d",tid);
 		return 0;
 	}
 
-	else
-	{
+	//else
+	//{
 		child -> waiter = gettid();
 
-		while(!isDone(child))
-		{
-			cond_wait(&(child -> exit_cond),&(child -> 
-						private_lock));
-		}
+		//while(!isDone(child))
+		//{
+			//cond_wait(&(child -> exit_cond),&(child -> 
+			//			private_lock));
+			child->private_lock = 0;
+			deschedule(&reject);
+		//}
 
+	while(compAndXchg((void *)&(child -> private_lock),0,1))
+	{
+		yield(tid);
+	}
 		if(statusp != NULL)
 		 *statusp = child -> exit_status;
 		remove_tcb_from_list(child);
-		mutex_unlock(&(child -> private_lock));
+	//	mutex_unlock(&(child -> private_lock));
+		child->private_lock = 0;
 		free_child_data_structures(child);
 		SIPRINTF("Exiting join with success with wait and tid: %d",tid);
 		return 0;
 
-	}
+	//}
 
 }
 
@@ -229,7 +240,8 @@ void thr_exit( void *status )
 	if(current -> waiter != -1)
 	{
 		setDone(current);
-		cond_signal(&(current -> exit_cond));
+		//cond_signal(&(current -> exit_cond));
+		while (make_runnable(current->waiter) < 0);
 	}
 
 	else
@@ -239,6 +251,7 @@ void thr_exit( void *status )
 
 	//mutex_unlock(&(current -> private_lock));
 
+	//current->private_lock = 0;
 	//vanish();
 	vanish_thread_exit(&(current->private_lock));
 }
@@ -360,8 +373,8 @@ int check_if_pid_exists_tcb(int tid)
 
 void free_child_data_structures(tcb child)
 {
-	mutex_destroy(&(child -> private_lock));
-	cond_destroy(&(child -> exit_cond));
+	//mutex_destroy(&(child -> private_lock));
+	//cond_destroy(&(child -> exit_cond));
 	free_pages(child);
 }
 
