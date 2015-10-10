@@ -24,33 +24,13 @@
 #include<thr_internals.h>
 #include<simics.h>
 
-#define COND_OBJ_SIZE sizeof(cond_var_object)
+#define COND_OBJ_SIZE sizeof(cond_t)
 #define LOCK_AVAILABLE 0
 #define PASS 0
 #define FAIL -1
 
-#define GET_COND_ID(cv) (unsigned int)(&(cv -> cond_id))
+#define GET_COND_ID(cv) ((unsigned int)(cv))
 
-/** @brief Struct for waiting thread queue */
-typedef struct wait_thread_queue
-{
-   	int thread_id;
-	struct wait_thread_queue * next_wait_thread;
-} wait_thread_queue;
-
-/** @brief Stuct for conditional variable */
-
-typedef struct cond_var_object 
-{
-	unsigned int cond_id;/*ID of the cond var */
-	mutex_t cond_lock;/*Lock for the cond objects */
-	wait_thread_queue * head_queue;/*Head of the wait queue */
-	mutex_t * mutex_object; /* Associated mutex object */
-	struct cond_var_object * next_cond_object;/* Next cond object */
-} cond_var_object;
-
-/** @brief Head of the cond_var_objects */
-cond_var_object * head_cond_object = NULL;
 
 /** @brief compare and exchange instruction */
 int compAndXchg(void *,int,int);

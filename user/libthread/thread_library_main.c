@@ -351,7 +351,7 @@ void free_child_data_structures(tcb child)
 {
 	mutex_destroy(&(child -> private_lock));
 	cond_destroy(&(child -> exit_cond));
-	//free_pages(child);
+	free_pages(child);
 }
 
 

@@ -38,39 +38,6 @@
 /** @brief Get the mutex id from the structure */
 
 #define GET_MUTEX_ID(mp) (unsigned int)(mp)
-/*
-typedef struct thread_queue 
-{
-	int thread_id;
-	struct thread_queue * next_thread_id;
-} thread_queue;
-*/
-/** @brief Mutex thread objects 
- *  
- *  This contains : 
- *  1. Mutex id to identify mutex object 
- dd_to
- *  2. Head to track the list of waiting 
- *  thread ID queues 
- *  3. Pointer to next element 
- *
- *  4. Lock for that mutex object
- */
-/*
-
-typedef struct mutex_thread_object
-{
-	unsigned int mutex_id;
-	thread_queue * head_queue;
-	struct mutex_thread_object * next_mutex_object;
-	int lock;
-	int thread_lock_holder;
-} mutex_thread_object;
-*/
-
-/** @brief List of mutex objects */
-
-mutex_t * head_mutex_object = NULL;
 
 int compAndXchg(void *,int,int);
 /* Functions */

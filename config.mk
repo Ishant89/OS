@@ -97,7 +97,7 @@ UPDATE_METHOD = afs
 STUDENTTESTS = test test_fork test_new_pages test_thread_fork test_thread_create test_panic \
 			   test_mutex_pos1 test_mutex_pos2 test_mutex_pos3 test_mutex_simple test_mutex_thr1 \
 			   test_mutex_thr2 test_mutex_destroy_neg test_mutex_neg1 test_mutex_neg3 test_mutex_neg4 \
-			   test_mutex_neg5 
+			   test_mutex_neg5 test_rwlock
 			  
 ###########################################################################
 # Object files for your thread library

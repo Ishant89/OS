@@ -24,9 +24,7 @@ typedef struct thread_queue
  */
 
 typedef struct mutex {
-	unsigned int mutex_id;
 	thread_queue * head_queue;
-	struct mutex * next_mutex_object;
 	int lock;
 	int lock_owner;
 	int unlock_flag;
