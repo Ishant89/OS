@@ -1,11 +1,10 @@
-/**
+  @file README.doc
+  @brief 15-410 P2 : Thread Library
 
-@mainpage 15-410 Project 2
+  @author Ishant(idawer) and Shelton(sdsouza)
+  @bug No known bugs
 
-@author Ishant Dawer (idawer)
-@author Shelton Dsouza (sdsouza)
-
---------------------Thread Library Main ----------------------------------
+  --------------------Thread Library Main ----------------------------------
 
  A. thr_create : The parent first allocates space for the child's TCB and
                  stack. It then creates the child using the thread fork
@@ -78,4 +77,92 @@
 
 
 
-*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -8,7 +8,8 @@
 /** @brief Struct for waiting thread queue */
 typedef struct wait_thread_queue
 {
-   	int thread_id;
+   	int thread_id; /* Waiting thread id*/
+	/* next waiting thread element */
 	struct wait_thread_queue * next_wait_thread;
 } wait_thread_queue;
 

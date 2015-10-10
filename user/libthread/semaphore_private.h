@@ -27,10 +27,8 @@
 #include <thread.h>
 #include <contracts.h>
 #include <mutex_type.h>
-/*EDIT:To be removed*/
-#include <simics.h>
 #include <sem_type.h>
 
 #define SUCCESS 0
 #define FAILURE -1
-
+#define KILL_STATUS -2

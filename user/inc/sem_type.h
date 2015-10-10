@@ -20,9 +20,13 @@
  *
  */
 typedef struct sem {
+	/* condvar */
   cond_t cv;
+  /* Count for semaphore*/
   int count;
+  /* Max fixed count */
   unsigned int max_count;
+  /* Lock for sem_wait & sem_signal*/
   mutex_t mutex_lock;
 } sem_t;
 

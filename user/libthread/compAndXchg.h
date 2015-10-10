@@ -2,7 +2,7 @@
  *  
  *  @brief Header file for atomic exchange 
  *
- *  @author Ishant Dawer
+ *  @author Ishant Dawer (idawer) & Shelton(sdsouza)
  *
  *  @bug No known bugs 
  */

@@ -9,6 +9,16 @@
 
 .globl compAndXchg
 
+/** @brief Compare and exchange instruction
+ *  
+ *  This function implements compare and exchanged instruction 
+ *
+ *  @param destination location
+ *  @param compare_value value to be compared
+ *  @param source_value source value
+ *  @return lock (0 if available else 1)
+ */
+
 compAndXchg:
 	movl 0xc(%esp),%ecx
 	movl 0x8(%esp),%eax

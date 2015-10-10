@@ -10,7 +10,29 @@
  *  3. rwlock_lock
  *  4. rwlock_unlock
  *  5. rwlock_downgrade
- *	
+ *
+ *  General flow of the rwlock is as follows:
+ *  1. Lets consider 5 readers come and no writer is running
+ *  2. All readers will check if there is no writer waiting 
+ *  3. If yes, all will take the lock and will execute
+ *  4. While all readers share the lock and are executing, if any 
+ *  writer comes
+ *  5. Writer will announce and increase its waitcount so that next set
+ *  of readers are blocked 
+ *  6. Writer will check if no other writer is not running and has the lock
+ *  and no other reads are running after it announced its interest
+ *  7. Once writer will take charge, waitcnt is reduced by 1 and if at all 
+ *  other writers come, they will raise their raise count and gets blocked
+ *  and same is true with readers
+ *  8. In unlock by writer, writer will check if any waiting writer is there
+ *  if yes, it will signal writer else it will broadcast readers that they can
+ *  take it up
+ *  9. In unlock by reader, reader will see if there is any waiting writer, then 
+ *  it will signal writer to run else it will broadcast readers to run
+ *
+ *  Hence, above design conforms to preventing writer's starvation and enables 
+ *  parallel execution of readers	
+ *
  *	@author Ishant Dawer(idawer) & Shelton D'souza(sdsouza)
  *	@bug No known bugs
  */
@@ -37,9 +59,9 @@ void add_rwlock_object_list(rwlock_thread_object * object)
  *  This pushes the thread id to the end
  *  of the queue 
  *
- *  @param queue Queue
+ *  @param queue_head head of the queue(address)
  *
- *  @param thread_id last_elem
+ *  @param  last_elem rwlock queue element
  *  @return void 
  */
 
@@ -69,7 +91,7 @@ void add_thread_id_to_queue(
  *  This removes rwlock object from the
  *  list 
  *   
- *  @param rwlock_id Mutex id 
+ *  @param rwlock_id rwlock id 
  *  @return Pass/Fail
  */
 
@@ -203,32 +225,31 @@ int rwlock_init(rwlock_t * rwlock)
 
 	if (rwlock_obj == NULL)
 	{
-		lprintf("Unable to alloc");
+		panic("Unable to alloc");
 		return FAIL;
 	}
 
 	/* Populate the fields */
 
-	lprintf("Entering rwlock ");
 	rwlock_obj -> rwlock_id = rwlock_id;
 	if (mutex_init(&(rwlock_obj-> global_lock)) < 0)
 	{
-		lprintf("Unable to init  mutex");
+		panic("Unable to init  mutex");
 		return FAIL;
 	}
 
 	if (cond_init(&(rwlock_obj-> read_cond)) < 0)
 	{
-		lprintf("Unable to init  read cond");
+		panic("Unable to init  read cond");
 		return FAIL;
 	}
 	
 	if (cond_init(&(rwlock_obj-> write_cond)) < 0)
 	{
-		lprintf("Unable to init  write cond");
+		panic("Unable to init  write cond");
 		return FAIL;
 	}
-
+	/* Initial params */
 	rwlock_obj-> readcnt = 0;
 	rwlock_obj-> writecnt = 0;
 	rwlock_obj-> wait_writecnt = 0;
@@ -236,7 +257,6 @@ int rwlock_init(rwlock_t * rwlock)
 	rwlock_obj->head_queue = NULL;
 	rwlock_obj->downgrade_id = -1;
 	/* Add to the global list */
-	
 	add_rwlock_object_list(rwlock_obj);
 	return PASS;
 }
@@ -244,7 +264,12 @@ int rwlock_init(rwlock_t * rwlock)
 /** @brief handle reader request
  *  
  *  This does : 
- *  1. 
+ *  1. It waits using cond_wait if 
+ *  there are any active  or waiting writers or if writer is not yet 
+ *  downgraded  
+ *  2. After waking up by writers, it increments the readcnt as reader is
+ *  active
+ *  3. Adds itself to the queue 
  *  @param rwlock_identifier
  */
 
@@ -253,7 +278,6 @@ void reader_request_handle(rwlock_thread_object * rwlock_identifier)
 	/* Take the lock */
 	mutex_lock(&(rwlock_identifier->global_lock));
 
-	lprintf("Reader came");
 	while ((rwlock_identifier->wait_writecnt > 0 || 
 			rwlock_identifier-> writecnt > 0) && 
 			rwlock_identifier->downgrade_id==-1)
@@ -264,7 +288,8 @@ void reader_request_handle(rwlock_thread_object * rwlock_identifier)
 	/*Increment the readcount */
 	rwlock_identifier->readcnt++;
 	/* Unlock */
-	thread_queue_rwlock * new_thread_request = (thread_queue_rwlock*)malloc(sizeof(thread_queue_rwlock));
+	thread_queue_rwlock * new_thread_request = 
+		(thread_queue_rwlock*)malloc(sizeof(thread_queue_rwlock));
 	new_thread_request -> thread_id = gettid();
 	new_thread_request -> type = READ;
 	new_thread_request -> next_thread_id = NULL;
@@ -276,7 +301,12 @@ void reader_request_handle(rwlock_thread_object * rwlock_identifier)
 /** @brief handle writeer request
  *  
  *  This does : 
- *  1. 
+ *  1. It waits using cond_wait if 
+ *  there are any active readers or active writers 
+ *  2. After waking up by writer, it increments the  active writecnt 
+ *  as writer is active
+ *  3. Adds itself to the queue 
+ *
  *  @param rwlock_identifier
  */
 
@@ -284,7 +314,6 @@ void writer_request_handle(rwlock_thread_object * rwlock_identifier)
 {
 	/* Take the lock */
 	mutex_lock(&(rwlock_identifier->global_lock));
-	lprintf("Writer came");
 	rwlock_identifier-> wait_writecnt++;
 	while (rwlock_identifier->writecnt > 0 || 
 			rwlock_identifier->readcnt > 0 
@@ -295,7 +324,8 @@ void writer_request_handle(rwlock_thread_object * rwlock_identifier)
 	}
 	rwlock_identifier-> wait_writecnt--;
 	rwlock_identifier->writecnt++;
-	thread_queue_rwlock * new_thread_request = (thread_queue_rwlock*)malloc(sizeof(thread_queue_rwlock));
+	thread_queue_rwlock * new_thread_request = 
+		(thread_queue_rwlock*)malloc(sizeof(thread_queue_rwlock));
 	new_thread_request -> thread_id = gettid();
 	new_thread_request -> type = WRITE;
 	new_thread_request -> next_thread_id = NULL;
@@ -309,10 +339,8 @@ void writer_request_handle(rwlock_thread_object * rwlock_identifier)
 /** @brief rwlock lock 
  *  
  *  This does : 
- *  1. Acquire the lock 
- *  2. Checks if writers are pending 
- *  3. If yes, puts itslef into wait
- *  4. 
+ *  1. It checks the type of the locking request and 
+ *  assigns to their respective handler above
  *
  *  @param rwlock
  *  @param type
@@ -322,8 +350,6 @@ void writer_request_handle(rwlock_thread_object * rwlock_identifier)
 
 void rwlock_lock(rwlock_t * rwlock, int type)
 {
-	lprintf("Entering rwlock id:%d by tid %d and type: %d",
-			(unsigned int)rwlock,gettid(),type);
 	/* get the rwlock id from the structure */
 	unsigned int rwlock_id = GET_RWLOCK_ID(rwlock);
 
@@ -333,12 +359,10 @@ void rwlock_lock(rwlock_t * rwlock, int type)
 
 	if ( rwlock_identifier == NULL)
 	{
-		lprintf("Call rwlock init first \n");
-		task_vanish(-2);
+		panic("Call rwlock init first \n");
+		task_vanish(KILL_STATUS);
 	}
-
 	/* Check what is the type */
-
 	switch(type)
 	{
 		case READ:
@@ -358,21 +382,18 @@ void rwlock_lock(rwlock_t * rwlock, int type)
 /** @brief rwlock unlock 
  *  
  *  This does : 
- *  1. Acquire the lock 
- *  2. Checks if writers are pending 
- *  3. If yes, puts itslef into wait
- *  4. 
+ *  1. It checks the type of the head of the queue
+ *  2. It decrements the active count (readcnt or writecnt)
+ *  3. If there is writer waiting, signal writer
+ *  4. Else broadcast to readers to run
  *
  *  @param rwlock
- *  @param type
  *	
  *	@return void
  */
 
 void rwlock_unlock(rwlock_t * rwlock)
 {
-	lprintf("Entering rwlock id:%d by tid %d ",
-			(unsigned int)rwlock,gettid());
 	/* get the rwlock id from the structure */
 	unsigned int rwlock_id = GET_RWLOCK_ID(rwlock);
 	/* Get the thread id of the thread */
@@ -384,8 +405,8 @@ void rwlock_unlock(rwlock_t * rwlock)
 
 	if ( rwlock_identifier == NULL)
 	{
-		lprintf("Call rwlock init first \n");
-		task_vanish(-2);
+		panic("Call rwlock init first \n");
+		task_vanish(KILL_STATUS);
 	}
 	
 	/* Check if the request is valid */
@@ -394,8 +415,8 @@ void rwlock_unlock(rwlock_t * rwlock)
 
 	if (thread == NULL)
 	{
-		lprintf("Thread ID does not exist");
-		task_vanish(-2);
+		panic("Thread ID does not exist");
+		task_vanish(KILL_STATUS);
 	}
 	
 	/* Take the lock */
@@ -435,13 +456,14 @@ void rwlock_unlock(rwlock_t * rwlock)
 /** @brief Rwlock downgrade 
  *  
  *  This does : 
+ *  1. It checks if reader is downgrading or not
+ *  2. It checks if it is already downgraded
+ *  3. Once downgraded, it broadcasts to readers to run
  */
 
 
 void rwlock_downgrade(rwlock_t * rwlock)
 {
-	lprintf("Entering rwlock downgrade id:%d by tid %d ",
-		(unsigned int)rwlock,gettid());
 	/* get the rwlock id from the structure */
 	unsigned int rwlock_id = GET_RWLOCK_ID(rwlock);
 	/* Get the thread id of the thread */
@@ -453,12 +475,10 @@ void rwlock_downgrade(rwlock_t * rwlock)
 
 	if ( rwlock_identifier == NULL)
 	{
-		lprintf("Call rwlock init first \n");
-		task_vanish(-2);
+		panic("Call rwlock init first \n");
+		task_vanish(KILL_STATUS);
 	}
-	
 	/*Release the lock */
-
 	mutex_lock(&(rwlock_identifier->global_lock));
 	/* Check if the request is valid */
 	thread_queue_rwlock * thread = check_if_thread_in_queue_rwlock(
@@ -466,14 +486,14 @@ void rwlock_downgrade(rwlock_t * rwlock)
 
 	if (thread == NULL)
 	{
-		lprintf("Thread ID does not exist");
-		task_vanish(-2);
+		panic("Thread ID does not exist");
+		task_vanish(KILL_STATUS);
 	}
 
 	/* Check if flag is already set */
 	if (rwlock_identifier->downgrade_id != -1)
 	{
-		lprintf("Already set downgrade");
+		panic("Already set downgrade");
 		mutex_unlock(&(rwlock_identifier->global_lock));
 		return;
 	}
@@ -486,14 +506,18 @@ void rwlock_downgrade(rwlock_t * rwlock)
 		cond_broadcast(&(rwlock_identifier->read_cond));
 	} else 
 	{
-		lprintf("Reader cannot downgrade ");
+		panic("Reader cannot downgrade ");
 	}
 	/*Release the lock */
 
 	mutex_unlock(&(rwlock_identifier->global_lock));
 }
 
-/** @brief rwlock destroy 
+/** @brief rwlock destroy
+ *  1. Checks if there are no requests pending
+ *  2. Destroys the readcond,writecond and global
+ *  mutex
+ *  3. Removes the rwlock object 
  */
 
 void rwlock_destroy(rwlock_t * rwlock)
@@ -508,8 +532,8 @@ void rwlock_destroy(rwlock_t * rwlock)
 	/* Check if the queue is empty or not */
 	if (rwlock_identifier -> head_queue != NULL)
 	{
-		lprintf("Threads are still in rwlock queue ");
-		task_vanish(-2);
+		panic("Threads are still in rwlock queue ");
+		task_vanish(KILL_STATUS);
 	}
 
 	/* Remove the rwlock object from the list */

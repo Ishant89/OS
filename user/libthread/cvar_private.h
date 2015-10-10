@@ -20,17 +20,14 @@
 #include<mutex.h>
 #include<cond_type.h>
 #include<syscall.h>
-
 #include<thr_internals.h>
-#include<simics.h>
 
 #define COND_OBJ_SIZE sizeof(cond_t)
 #define LOCK_AVAILABLE 0
 #define PASS 0
 #define FAIL -1
-
 #define GET_COND_ID(cv) ((unsigned int)(cv))
-
+#define KILL_STATUS -2
 
 /** @brief compare and exchange instruction */
 int compAndXchg(void *,int,int);

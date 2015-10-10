@@ -15,33 +15,7 @@
  *  @bug No known bugs 
  */
 
-/** @brief Add condvar object to the global list 
- *  
- *  This adds cond var object to the list 
- *  @param cv condvar id
- *
- *  @return Pass/Fail
- */
-
-#define DEBUG 0
-#define DEBUG_CRITICAL 0
 #include "cvar_private.h"
-
-/*
-static void debug_cond_structure(cond_t * cv)
-{
-	cond_t * temp = cv;
-	wait_thread_queue * temp_queue;
-	ISPRINTF("Begin trace\n");
-	wait_thread_queue * queue = temp -> head_queue;
-	for (temp_queue = queue; temp_queue!=NULL;
-			temp_queue=temp_queue->next_wait_thread)
-	{
-		ISPRINTF("TID is %u",temp_queue->thread_id);
-	}
-	ISPRINTF("End trace\n");
-}
-*/
 
 
 /** @brief Check if thread is already in queue
@@ -55,7 +29,10 @@ static void debug_cond_structure(cond_t * cv)
  *  @return Pass/Fail 
  */
 
-static int check_if_thread_in_wait_queue(wait_thread_queue ** head_queue,unsigned int thread_id)
+static int check_if_thread_in_wait_queue(
+		wait_thread_queue ** head_queue,
+		unsigned int thread_id
+		)
 {
 	wait_thread_queue * temp;
 	for (temp=*head_queue;temp != NULL;temp=temp->next_wait_thread)
@@ -73,9 +50,9 @@ static int check_if_thread_in_wait_queue(wait_thread_queue ** head_queue,unsigne
  *  This pushes the thread id to the end
  *  of the queue 
  *
- *  @param queue Queue
+ *  @param queue_head address of head of the queue
  *
- *  @param thread_id last_elem
+ *  @param last_elem last queue element
  *  @return void 
  */
 
@@ -104,12 +81,13 @@ static void append_thread_id_to_wait_queue(
  *  This pushes the thread id from the top of the queue
  *  of the queue and returns the element if success
  *
- *  @param queue Queue
+ *  @param queue_head address of the head of the queue
  *
  *  @return int Success 
  */
 
-static wait_thread_queue * remove_thread_id_from_wait_queue(wait_thread_queue ** queue_head)
+static wait_thread_queue * remove_thread_id_from_wait_queue(
+		wait_thread_queue ** queue_head)
 {
 	wait_thread_queue * temp = NULL;
 	if (*queue_head != NULL)
@@ -123,12 +101,9 @@ static wait_thread_queue * remove_thread_id_from_wait_queue(wait_thread_queue **
 /** @brief Cond Init 
  *  
  *  This implements following :
- *  1. It takes cv variable and uses it as an id 
- *  2. It checks if ID already exists in the global list 
- *  3. If not returns Failure 
- *  4. Create a new object such that lock is available, next cond obj
- *  is NULL, head_queue is empty and outer mutex is not mapped yet
- *  5. Adds to the list successfully 
+ *  1. Sets the waiting thread queue to NULL
+ *  2. Sets the associated mutex object to NULL
+ *  3. Initilaize the internal mutex lock used as a queue lock
  *
  *  @param cv Condvar ID 
  *  @return PASS/FAIL
@@ -136,26 +111,21 @@ static wait_thread_queue * remove_thread_id_from_wait_queue(wait_thread_queue **
 
 int cond_init(cond_t * cv)
 {
-	SIPRINTF("Entering cond_init with cond object id : %d by tid: %d",(unsigned int)cv,gettid());
-
 	/* Creating the cond object */
 	cond_t * cond_obj = cv;
 
 	if (cond_obj == NULL)
 	{
-		SIPRINTF("Unable to allocate cond_object");
+		panic("Unable to allocate cond_object");
 		return FAIL;
 	}
 	cond_obj -> head_queue = NULL;
 	cond_obj-> mutex_object = NULL;
 	if (mutex_init(&(cond_obj->cond_lock)) < 0)
 	{
-		SIPRINTF("Unable to allocate lock");
+		panic("Unable to allocate lock");
 		return FAIL;
 	}
-	
-	SIPRINTF("Exiting cond_init with cond object id : %d by tid: %d",(unsigned int)cv,gettid());
-
 	return PASS;
 }
 
@@ -163,20 +133,18 @@ int cond_init(cond_t * cv)
 /** @brief Cond wait 
  *  
  *  This function does the  following : 
- *  1. It checks if invoking thread id is already in the 
- *  queue 
- *  2. If yes, it throws an error 
- *  3. If no, it creates a new thread_id structure 
- *  4. Adds it to the list atomically (with internal lock
- *  5. Unlocks the global lock 
- *  6. Deschedule it 
- *  7. After deschedule it will try to acquire the lock again
+ *  1. It takes the queue lock 
+ *  2. It checks if the condvar is associated with mutex object (mp)
+ *  3. If yes, it checks if the mapping is correct
+ *  4. If no, sets the associated mutex object
+ *  5. Checks if thread is already in wait queue
+ *  6. Appends to the queue if not there already
+ *  7. Release the global lock and queue lock
+ *  8. Deschedule itself 
  */
 
 void cond_wait(cond_t * cv, mutex_t*mp)
 {
-	SIPRINTF("Entering cond_wait with cv %d and mp %d by tid: %d",
-			(unsigned int) cv,(unsigned int) mp,gettid());
 	/* Reject condition */
 	int reject = 0;
 
@@ -187,8 +155,8 @@ void cond_wait(cond_t * cv, mutex_t*mp)
 	cond_t * cond_obj = cv;
 	if (cond_obj == NULL)
 	{
-		SIPRINTF("Cond var object not initialized");
-		task_vanish(-2);
+		panic("Cond var object not initialized");
+		task_vanish(KILL_STATUS);
 	}
 
 	/*Take the queue lock*/
@@ -200,7 +168,8 @@ void cond_wait(cond_t * cv, mutex_t*mp)
 		cond_obj -> mutex_object = mp;
 	} else if (cond_obj -> mutex_object != mp)
 	{
-		SIPRINTF("Illegal mapping of mp with cv");
+		panic("Illegal mapping of mp with cv");
+		/*Release the queue lock*/
 		mutex_unlock(&(cond_obj -> cond_lock));
 		return;
 	}
@@ -208,8 +177,8 @@ void cond_wait(cond_t * cv, mutex_t*mp)
 	/* Check if thread is already waiting */
 	if (!check_if_thread_in_wait_queue(&cond_obj->head_queue,thread_id))
 	{
-		SIPRINTF("Thread already waiting");
-		task_vanish(-2);
+		panic("Thread already waiting");
+		task_vanish(KILL_STATUS);
 	}
 
 	/* Create the thread id structure */
@@ -218,7 +187,6 @@ void cond_wait(cond_t * cv, mutex_t*mp)
 	new_thread_request.thread_id = thread_id;
 	new_thread_request.next_wait_thread = NULL;
 
-	SIPRINTF("Lock is with tid %d",gettid());
 	/*Append to the queue */
 
 	append_thread_id_to_wait_queue(&(cond_obj->head_queue),
@@ -230,20 +198,11 @@ void cond_wait(cond_t * cv, mutex_t*mp)
 	/* unlocking the global mutex */
 	mutex_unlock(mp);
 
-	
-	SIPRINTF("Lock is just released by tid %d",gettid());
-	/*EDIT: */
-
-
 	/*Deschedule */
-	SIPRINTF("TID is descheduled %d",gettid());
 	if(deschedule(&reject) < 0)
 	{
 		return;
 	}
-	SIPRINTF("Exiting cond_wait with cv %d and mp %d by tid: %d",
-			(unsigned int) cv,(unsigned int) mp,gettid());
-	
 	/* Take the global lock */
 	mutex_lock(mp);
 }
@@ -268,16 +227,13 @@ void cond_wait(cond_t * cv, mutex_t*mp)
 
 void cond_signal(cond_t * cv )
 {
-	SIPRINTF("Entering cond_signal with condv %d by tid: %d",
-			(unsigned int) cv,gettid());
-
 	/* Get the condvar object */
 	cond_t * cond_obj = cv;
 
 	if (cond_obj == NULL)
 	{
-		SIPRINTF("Cond var object not initialized");
-		task_vanish(-2);
+		panic("Cond var object not initialized");
+		task_vanish(KILL_STATUS);
 	}
 
 	/* Take the lock */
@@ -286,14 +242,11 @@ void cond_signal(cond_t * cv )
 
 	if (cond_obj -> head_queue == NULL)
 	{
-		SIPRINTF("Queue is empty");
 		cond_obj->mutex_object = NULL;
 		mutex_unlock(&(cond_obj->cond_lock));
 		return;
 	}
 
-
-	SIPRINTF("Lock is with tid %d",gettid());
 	/*Pop the first element from the queue*/
 
 	wait_thread_queue * pop_elem = remove_thread_id_from_wait_queue(
@@ -311,18 +264,9 @@ void cond_signal(cond_t * cv )
 	{
 		continue;
 	}
-	SIPRINTF("Cond sign:Made runnable %d by %d",pop_elem->thread_id,thread_id);
 	
 	/*Release the lock */
 	mutex_unlock(&(cond_obj->cond_lock));
-	//cond_obj->cond_lock = 0;
-    	
-	SIPRINTF("Lock is just released by tid %d",gettid());
-	/*EDIT: */
-
-
-	SIPRINTF("Exiting cond_signal with cv %d by tid: %d", 
-			(unsigned int) cv,gettid());
 }
 
 /** @brief Cond broadcast 
@@ -344,16 +288,13 @@ void cond_signal(cond_t * cv )
 
 void cond_broadcast(cond_t * cv )
 {
-	SIPRINTF("Entering cond_broadcast with condv %d by tid: %d",
-			(unsigned int) cv,gettid());
-
 	/* Get the condvar object */
 	cond_t * cond_obj = cv;
 
 	if (cond_obj == NULL)
 	{
-		SIPRINTF("Cond var object not initialized");
-		task_vanish(-2);
+		panic("Cond var object not initialized");
+		task_vanish(KILL_STATUS);
 	}
 	
 
@@ -362,14 +303,11 @@ void cond_broadcast(cond_t * cv )
 
 	if (cond_obj -> head_queue == NULL)
 	{
-		SIPRINTF("Queue is empty");
 		cond_obj-> mutex_object = NULL;
 		mutex_unlock(&(cond_obj->cond_lock));
 		return;
 	}
 
-	
-	SIPRINTF("Lock is with tid %d",gettid());
 	/*Pop the first element from the queue*/
 
 	wait_thread_queue * pop_elem;
@@ -382,20 +320,11 @@ void cond_broadcast(cond_t * cv )
 		{
 			continue;
 		}
-		SIPRINTF("Made runnable %d by %d",pop_elem->thread_id,thread_id);
 	}
 	/* Resetting the mutex_object */
 	cond_obj-> mutex_object = NULL;
 	/*Release the lock */
 	mutex_unlock(&(cond_obj->cond_lock));
-	
-	SIPRINTF("Lock is just released by tid %d",gettid());
-	/*EDIT: */
-
-
-	SIPRINTF("Exiting cond_broadcast with cv %d by tid: %d", 
-			(unsigned int) cv,gettid());
-
 }
 
 
@@ -409,46 +338,25 @@ void cond_broadcast(cond_t * cv )
 
 void cond_destroy(cond_t * cv)
 {
-
-	SIPRINTF("Entering cond_destroy with condv %d by tid: %d",
-			(unsigned int) cv,gettid());
-	/* Condv id */
-
-
 	/* Get the condvar object */
 	cond_t * cond_obj = cv;
 
 	if (cond_obj == NULL)
 	{
-		lprintf("Cond var object not initialized");
-		task_vanish(-2);
+		panic("Cond var object not initialized");
+		task_vanish(KILL_STATUS);
 	}
 	/*Take the lock */
 	mutex_lock(&(cond_obj->cond_lock));
-	
 
 	/* Either lock is still taken and elements are still there */
 	if (cond_obj->head_queue != NULL)
 	{
-		lprintf("Terminating : Either lock is nt released or elements are there\n");
+		panic("Terminating : Either lock is nt released or elements are there\n");
 		/* Change status to macro */
-		task_vanish(-2);
+		task_vanish(KILL_STATUS);
 	}
-
 	mutex_unlock(&(cond_obj->cond_lock));
-	
-	/* Destroy the mutex */
-
+	/* Destroy the gloabl mutex */
 	mutex_destroy(&(cond_obj->cond_lock));
-	SIPRINTF("Exiting cond_destroy with condv %d by tid: %d",
-			(unsigned int) cv,gettid());
 }
-
-
-
-
-
-
-
-
-
