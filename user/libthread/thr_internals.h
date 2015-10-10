@@ -1,7 +1,10 @@
 /** @file thr_internals.h
  *
- *  @brief This file may be used to define things
- *         internal to the thread library.
+ *  @brief Thread library related declarations
+ *
+ *  @author Ishant(idawer) & Shelton(sdsouza)
+ *       
+ *  @bug No known bugs 
  */
 
 
@@ -10,14 +13,14 @@
 #define THR_INTERNALS_H
 #include<mutex.h>
 
+/** @brief Stack high pointer*/
 extern void * stack_high_ptr;
+/** @brief Stack low pointer*/
 extern void * stack_low_ptr;
 
 mutex_t alloc_lock;
 
-/*EDIT: REMOVE LATE */
 int thread_fork(void *stack);
-/* unsigned errno codes */
 
 /* helper function for panic */
 char *get_fault_reason(int exception_number);

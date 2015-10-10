@@ -10,46 +10,20 @@
  *  3. mutex_lock
  *  4. mutex_unlock
  *  Note: This design will change for M:N implementation	
- *	@author Ishant Dawer(idawer)
- *	@bug Malloc is not thread-safe
+ *	@author Ishant Dawer(idawer) & Shelton (sdsouza)
+ *	@bug No knwown bugs
  */
 
-
-
-/*EDIT: MAKE MALLOC SAFE*/
-#define DEBUG 0
-#define DEBUG_CRITICAL 0
 #include "mutex_private.h"
-/*
-void debug_mutex_structure()
-{
-	mutex_t * temp;
-	thread_queue * temp_queue;
-	SIPRINTF("Begin trace\n");
-	for (temp = head_mutex_object; temp != NULL; 
-			temp= temp->next_mutex_object)
-	{
-		SIPRINTF("Mutex id is %x",temp->mutex_id);
-		thread_queue * queue = temp -> head_queue;
-		for (temp_queue = queue; temp_queue!=NULL;
-				temp_queue=temp_queue->next_thread_id)
-		{
-			SIPRINTF("TID is %u",temp_queue->thread_id);
-		}
-	}
-	SIPRINTF("End trace\n");
-}
-*/
-
 
 /** @brief append thread id to the queue
  *  
  *  This pushes the thread id to the end
  *  of the queue 
  *
- *  @param queue Queue
+ *  @param queue_head Top of the queue
  *
- *  @param thread_id last_elem
+ *  @param queue_elem last_elem
  *  @return void 
  */
 

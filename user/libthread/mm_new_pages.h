@@ -1,4 +1,4 @@
-/** @file mm.h
+/** @file mm_new_pages.h
  *  
  *  @brief Memory allocator for the thread library
  *   
@@ -7,18 +7,12 @@
  *
  *  @author Ishant & Shelton
  *
- *  @bug 
+ *  @bug No known bugs 
  */
-
-/* Error codes */
 
 #include <mutex.h>
 
 typedef unsigned int size_t ;
-
-#define NEW_PAGES_ERROR -1
-
-#define MALLOC_ERROR -2
 
 
 #define WORD_SIZE 4
