@@ -8,10 +8,12 @@
 
 #ifndef THR_INTERNALS_H
 #define THR_INTERNALS_H
-
+#include<mutex.h>
 
 extern void * stack_high_ptr;
 extern void * stack_low_ptr;
+
+mutex_t alloc_lock;
 
 /*EDIT: REMOVE LATE */
 int thread_fork(void *stack);

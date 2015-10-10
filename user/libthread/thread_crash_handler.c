@@ -15,11 +15,16 @@
 #include <simics.h>
 #include <thr_internals.h>
 #include <thread_crash_handler.h>
+#include<syscall.h>
+#include<malloc.h>
+
+/*EDIT:Simics.h */
+#include<simics.h>
+#include<thr_internals.h>
 
 #define EXCEPTION_STACK_SIZE 256
 #define FAIL -1
 #define PASS 0
-
 
 /** @brief thread crash handler 
  *  
@@ -57,6 +62,9 @@ int install_thread_crash_handler(void *exception_stack)
 	SIPRINTF("Entering install thread crash handler");
 	ureg_t * newureg = NULL;
 
+	/*Allocating an exception stack */
+	void * exception_stack = malloc(EXCEPTION_STACK_SIZE);
+
 	SIPRINTF("stack : %p",exception_stack);
 	if (exception_stack == NULL)
 	{
@@ -64,6 +72,13 @@ int install_thread_crash_handler(void *exception_stack)
 		return FAIL;
 	}
 
+	/* De-registering the previous handler */
+	if (swexn(NULL,NULL,NULL,newureg)<0)
+	{
+		SIPRINTF("Unable to deregister previous handler ");
+		return FAIL;
+	}
+	SIPRINTF("Handler deregistered successfully");
 	/* Installing the handler */
 
 	if (swexn(exception_stack,thread_crash_handler,NULL,newureg)<0)

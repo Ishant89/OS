@@ -15,6 +15,7 @@
  *
  *	@bug 
  */
+
 #define DEBUG 0
 #include <thr_internals.h>
 #include "thr_private.h"
@@ -29,9 +30,14 @@
 int thr_init(unsigned int size)
 {
 	mutex_init(&(alloc_lock));
+	SIPRINTF("Entering thr init by id: %d",
+			            gettid());
+	/* Init malloc lock */
+	mutex_init(&alloc_lock);
 	mm_init_new_pages(size);
 	deregister_autostack_handler();
 	mutex_init(&(tcb_lock));
+	SIPRINTF("Mutex for tcb lock is id: %x",(unsigned int)&tcb_lock);
 	int flag;
     	/* Stack Size */
 	/* Check if size is multiple of PAGE_SIZE*/ 
@@ -40,7 +46,6 @@ int thr_init(unsigned int size)
 		stack_size = size;
 		flag = SUCCESS;
 	}
-
 	else
 		flag = ERROR;
 
@@ -53,6 +58,7 @@ int thr_init(unsigned int size)
 		return THREAD_NOT_CREATED;
 	}
 
+	
 	tcb name = (tcb) tcb_mem;
 	/* EDIT: name-> sp, name->func, name->arg and name->waiter to be decided */
 	name->kid = gettid();
@@ -62,8 +68,12 @@ int thr_init(unsigned int size)
 	/* Install thread crash handler for the parent */
 	install_thread_crash_handler(name -> crash_handler_sp);
 	mutex_init(&(name -> private_lock));
+	SIPRINTF("Mutex for private lock is id: %x",
+			(unsigned int)&name->private_lock);
 	cond_init(&(name -> exit_cond));
 	insert_tcb_list(name);
+	SIPRINTF("Exiting thr init by id: %d",
+			            gettid());
 	return flag;
 }
 
@@ -84,7 +94,7 @@ typedef void *(*func)(void*) ;
 
 int thr_create( func handler, void * arg )
 {
-	SIPRINTF("Entering thr create");
+	SIPRINTF("Entering thr create by id: %d",gettid());
 	/* Create stack for the thread */
 	/*EDIT: Replace 1 with macro */
 	
@@ -97,7 +107,7 @@ int thr_create( func handler, void * arg )
 		SIPRINTF("Exiting thr_create with error : Could not allocate TCB and stack for thread\n");
 		return THREAD_NOT_CREATED;
 	}
-
+	
 	/* TCB done */
 	register tcb name = (tcb) stack_tcb_mem;
 	name -> sp = (void*)((unsigned int)stack_tcb_mem + stack_size + TCB_SIZE);
@@ -107,6 +117,8 @@ int thr_create( func handler, void * arg )
 	name -> waiter = -1;
 	name -> crash_handler_sp = (void*)((unsigned int)stack_tcb_mem + TCB_SIZE + STACK_BUFFER + stack_size + CRASH_HANDLER_STACK_SIZE);
 	mutex_init(&(name -> private_lock));
+	SIPRINTF("Mutex for private lock is id: %x",
+			(unsigned int)&name->private_lock);
 	cond_init(&(name -> exit_cond));
 	/*Create kernel thread */
 	int pid = thread_fork(name->sp);
@@ -135,7 +147,8 @@ int thr_create( func handler, void * arg )
 	name->tid = pid;
 	insert_tcb_list(name);
 	print_tcb_list();
-	SIPRINTF("Exting thr_creat with Success : Done creating thread: %d",pid);
+SIPRINTF("Exting thr_creat by id:%d with Success : Done creating thread: %d"
+			,gettid(),pid);
 	return pid;
 }
 
@@ -155,7 +168,8 @@ void print_tcb_list()
 
 int thr_join( int tid, void **statusp)
 {
-	SIPRINTF("Entring join with tid: %d",tid);
+	SIPRINTF("Entring join by id :%d for tid: %d"
+			,gettid(),tid);
 
 	tcb child = get_tcb_from_tid(tid);
 

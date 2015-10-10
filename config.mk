@@ -85,15 +85,19 @@ UPDATE_METHOD = afs
 # A list of the test programs you want compiled in from the 410user/progs
 # directory
 #
-410TESTS = switzerland startle actual_wait thr_exit_join stack_test1 cyclone join_specific_test excellent wild_test1 bistromath juggle racer \
-	paraguay cvar_test beady_test agility_drill mandelbrot multitest nibbles rwlock_downgrade_read_test largetest
+410TESTS = switzerland startle actual_wait thr_exit_join stack_test1 cyclone join_specific_test wild_test1 bistromath juggle racer \
+	paraguay cvar_test beady_test agility_drill mandelbrot multitest nibbles rwlock_downgrade_read_test largetest mutex_destroy_test \
+	misbehave_wrap excellent test_cvar
 ###########################################################################
 # Test programs you have written which you wish to run
 ###########################################################################
 # A list of the test programs you want compiled in from the user/progs
 # directory
 #
-STUDENTTESTS = test test_fork test_new_pages test_thread_fork test_thread_create 
+STUDENTTESTS = test test_fork test_new_pages test_thread_fork test_thread_create test_panic \
+			   test_mutex_pos1 test_mutex_pos2 test_mutex_pos3 test_mutex_simple test_mutex_thr1 \
+			   test_mutex_thr2 test_mutex_destroy_neg test_mutex_neg1 test_mutex_neg3 test_mutex_neg4 \
+			   test_mutex_neg5 test_rwlock
 			  
 ###########################################################################
 # Object files for your thread library

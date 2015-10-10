@@ -65,6 +65,7 @@ typedef struct rwlock_thread_object
 	cond_t write_cond;
 	unsigned int readcnt;
 	unsigned int writecnt;
+	unsigned int wait_writecnt;
 	int downgrade_id;
 	thread_queue_rwlock * head_queue;
 	struct rwlock_thread_object * next_rwlock_object;

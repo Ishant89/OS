@@ -203,33 +203,35 @@ int rwlock_init(rwlock_t * rwlock)
 
 	if (rwlock_obj == NULL)
 	{
-		SIPRINTF("Unable to alloc");
+		lprintf("Unable to alloc");
 		return FAIL;
 	}
 
 	/* Populate the fields */
 
+	lprintf("Entering rwlock ");
 	rwlock_obj -> rwlock_id = rwlock_id;
 	if (mutex_init(&(rwlock_obj-> global_lock)) < 0)
 	{
-		SIPRINTF("Unable to init  mutex");
+		lprintf("Unable to init  mutex");
 		return FAIL;
 	}
 
 	if (cond_init(&(rwlock_obj-> read_cond)) < 0)
 	{
-		SIPRINTF("Unable to init  read cond");
+		lprintf("Unable to init  read cond");
 		return FAIL;
 	}
 	
 	if (cond_init(&(rwlock_obj-> write_cond)) < 0)
 	{
-		SIPRINTF("Unable to init  write cond");
+		lprintf("Unable to init  write cond");
 		return FAIL;
 	}
 
 	rwlock_obj-> readcnt = 0;
 	rwlock_obj-> writecnt = 0;
+	rwlock_obj-> wait_writecnt = 0;
 	rwlock_obj-> next_rwlock_object = NULL;
 	rwlock_obj->head_queue = NULL;
 	rwlock_obj->downgrade_id = -1;
@@ -251,8 +253,9 @@ void reader_request_handle(rwlock_thread_object * rwlock_identifier)
 	/* Take the lock */
 	mutex_lock(&(rwlock_identifier->global_lock));
 
-	SIPRINTF("Reader came");
-	while (rwlock_identifier->writecnt > 0 && 
+	lprintf("Reader came");
+	while ((rwlock_identifier->wait_writecnt > 0 || 
+			rwlock_identifier-> writecnt > 0) && 
 			rwlock_identifier->downgrade_id==-1)
 	{
 		cond_wait(&(rwlock_identifier->read_cond),
@@ -281,7 +284,8 @@ void writer_request_handle(rwlock_thread_object * rwlock_identifier)
 {
 	/* Take the lock */
 	mutex_lock(&(rwlock_identifier->global_lock));
-	SIPRINTF("Writer came");
+	lprintf("Writer came");
+	rwlock_identifier-> wait_writecnt++;
 	while (rwlock_identifier->writecnt > 0 || 
 			rwlock_identifier->readcnt > 0 
 			)
@@ -289,6 +293,7 @@ void writer_request_handle(rwlock_thread_object * rwlock_identifier)
 		cond_wait(&(rwlock_identifier->write_cond),
 				&(rwlock_identifier->global_lock));
 	}
+	rwlock_identifier-> wait_writecnt--;
 	rwlock_identifier->writecnt++;
 	thread_queue_rwlock * new_thread_request = (thread_queue_rwlock*)malloc(sizeof(thread_queue_rwlock));
 	new_thread_request -> thread_id = gettid();
@@ -317,7 +322,7 @@ void writer_request_handle(rwlock_thread_object * rwlock_identifier)
 
 void rwlock_lock(rwlock_t * rwlock, int type)
 {
-	SIPRINTF("Entering rwlock id:%d by tid %d and type: %d",
+	lprintf("Entering rwlock id:%d by tid %d and type: %d",
 			(unsigned int)rwlock,gettid(),type);
 	/* get the rwlock id from the structure */
 	unsigned int rwlock_id = GET_RWLOCK_ID(rwlock);
@@ -328,7 +333,7 @@ void rwlock_lock(rwlock_t * rwlock, int type)
 
 	if ( rwlock_identifier == NULL)
 	{
-		SIPRINTF("Call rwlock init first \n");
+		lprintf("Call rwlock init first \n");
 		task_vanish(-2);
 	}
 
@@ -366,7 +371,7 @@ void rwlock_lock(rwlock_t * rwlock, int type)
 
 void rwlock_unlock(rwlock_t * rwlock)
 {
-	SIPRINTF("Entering rwlock id:%d by tid %d ",
+	lprintf("Entering rwlock id:%d by tid %d ",
 			(unsigned int)rwlock,gettid());
 	/* get the rwlock id from the structure */
 	unsigned int rwlock_id = GET_RWLOCK_ID(rwlock);
@@ -379,7 +384,7 @@ void rwlock_unlock(rwlock_t * rwlock)
 
 	if ( rwlock_identifier == NULL)
 	{
-		SIPRINTF("Call rwlock init first \n");
+		lprintf("Call rwlock init first \n");
 		task_vanish(-2);
 	}
 	
@@ -389,7 +394,7 @@ void rwlock_unlock(rwlock_t * rwlock)
 
 	if (thread == NULL)
 	{
-		SIPRINTF("Thread ID does not exist");
+		lprintf("Thread ID does not exist");
 		task_vanish(-2);
 	}
 	
@@ -407,7 +412,7 @@ void rwlock_unlock(rwlock_t * rwlock)
 	else 
 		rwlock_identifier-> readcnt--;
 
-	if (rwlock_identifier -> writecnt > 0)
+	if (rwlock_identifier -> wait_writecnt> 0)
 	{
 		cond_signal(&(rwlock_identifier -> write_cond));
 	} else if (rwlock_identifier -> readcnt > 0)
@@ -435,7 +440,7 @@ void rwlock_unlock(rwlock_t * rwlock)
 
 void rwlock_downgrade(rwlock_t * rwlock)
 {
-	SIPRINTF("Entering rwlock downgrade id:%d by tid %d ",
+	lprintf("Entering rwlock downgrade id:%d by tid %d ",
 		(unsigned int)rwlock,gettid());
 	/* get the rwlock id from the structure */
 	unsigned int rwlock_id = GET_RWLOCK_ID(rwlock);
@@ -448,24 +453,28 @@ void rwlock_downgrade(rwlock_t * rwlock)
 
 	if ( rwlock_identifier == NULL)
 	{
-		SIPRINTF("Call rwlock init first \n");
+		lprintf("Call rwlock init first \n");
 		task_vanish(-2);
 	}
 	
+	/*Release the lock */
+
+	mutex_lock(&(rwlock_identifier->global_lock));
 	/* Check if the request is valid */
 	thread_queue_rwlock * thread = check_if_thread_in_queue_rwlock(
 			&rwlock_identifier->head_queue,thread_id);
 
 	if (thread == NULL)
 	{
-		SIPRINTF("Thread ID does not exist");
+		lprintf("Thread ID does not exist");
 		task_vanish(-2);
 	}
 
 	/* Check if flag is already set */
 	if (rwlock_identifier->downgrade_id != -1)
 	{
-		SIPRINTF("Already set downgrade");
+		lprintf("Already set downgrade");
+		mutex_unlock(&(rwlock_identifier->global_lock));
 		return;
 	}
 
@@ -477,9 +486,11 @@ void rwlock_downgrade(rwlock_t * rwlock)
 		cond_broadcast(&(rwlock_identifier->read_cond));
 	} else 
 	{
-		SIPRINTF("Reader cannot downgrade ");
-		return;
+		lprintf("Reader cannot downgrade ");
 	}
+	/*Release the lock */
+
+	mutex_unlock(&(rwlock_identifier->global_lock));
 }
 
 /** @brief rwlock destroy 
@@ -497,7 +508,7 @@ void rwlock_destroy(rwlock_t * rwlock)
 	/* Check if the queue is empty or not */
 	if (rwlock_identifier -> head_queue != NULL)
 	{
-		SIPRINTF("Threads are still in rwlock queue ");
+		lprintf("Threads are still in rwlock queue ");
 		task_vanish(-2);
 	}
 
