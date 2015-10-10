@@ -9,4 +9,3 @@
 
 vanish:
   int $VANISH_INT
-  ret

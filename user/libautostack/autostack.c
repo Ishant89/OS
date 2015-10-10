@@ -11,7 +11,7 @@
  *  @bug 
  */
 
-#define DEBUG 0
+//#define DEBUG 0
 #include <autostack.h>
 #include <thr_internals.h>
 #include <simics.h>
@@ -19,18 +19,25 @@
 #include <stdlib.h>
 
 
-void handler_t(void *arg, ureg_t *ureg)
+void autostack_handler_t(void *arg, ureg_t *ureg)
 {
   SIPRINTF("In swexn Handler!!\n");
-  SIPRINTF("CR2: %x  Low ptr: %p EIP: %x Reason: %d\n",ureg->cr2,stack_low_ptr,ureg->eip,ureg->cause);
+  SIPRINTF("CR2: %x  Low ptr: %p EIP: %x Reason: %d Sp: %x Error code: %d\n",ureg->cr2,stack_low_ptr,ureg->eip,ureg->cause,ureg->esp,ureg->error_code);
 
-  /* Check if it is a page fault exception
-   * Change this. To be done by ishant
-   */
-  if(ureg -> cause != 14)
-    task_vanish(-2);
+  char *fault_reason = get_fault_reason(ureg -> cause);
 
-  unsigned long extend_stack_size = GET_EXTENDED_STACK_BASE(stack_low_ptr,ureg->cr2);
+  if((ureg -> esp > (unsigned int)stack_low_ptr) || (ureg -> cause != SWEXN_CAUSE_PAGEFAULT))
+  {
+
+    panic("\n-------------Autostack handler only takes cares of page faults-------------- \
+          \n Cause for failure : %s \
+          \n Faulting address : 0x%x \
+          \n Instruction pointer at fault location : 0x%x", 
+          fault_reason, ureg -> cr2, ureg -> eip);
+    task_vanish(ureg -> error_code);
+  }
+
+  unsigned long extend_stack_size = GET_EXTENDED_STACK_BASE(stack_low_ptr,ureg->esp);
 
   SIPRINTF("Stack size: %ld",extend_stack_size);
 
@@ -38,13 +45,13 @@ void handler_t(void *arg, ureg_t *ureg)
 
   if(new_pages(stack_low_ptr,extend_stack_size) < 0)
   {
-    SIPRINTF("New pages error\n");
+    panic("New Pages error");
     err_num = NEW_PAGES_ERROR;
 	  task_vanish(err_num);
     return;
   }
 
-  if (swexn(exception_stack_high, handler_t , NULL, ureg) < 0)
+  if (swexn(autostack_addr_high, autostack_handler_t , NULL, ureg) < 0)
   {
     SIPRINTF("Cannot register SWEXN handler\n");
     err_num = SWEXN_INSTALL_ERROR;
@@ -60,39 +67,105 @@ install_autostack(void *stack_high, void *stack_low)
   stack_high_ptr = stack_high;
   stack_low_ptr = stack_low;
 
-  /*void * exception_stack_base = GET_STACK_LOW_ADDRESS((unsigned int)stack_low,20 * EXCEPTION_STACK_SIZE);
+  
+  autostack_addr_low = _malloc(EXCEPTION_STACK_SIZE);
 
-  if(new_pages(exception_stack_base,20 * EXCEPTION_STACK_SIZE) < 0)
-  {
-    SIPRINTF("New pages error\n");
-    err_num = NEW_PAGES_ERROR;
-    return;
-  }
+  autostack_addr_high = GET_STACK_HIGH((unsigned int)autostack_addr_low,EXCEPTION_STACK_SIZE);
 
-  //void *arg = stack_low;
-  //ureg_t * newreg = _calloc(1,sizeof(ureg_t));
-  if (swexn(stack_low, handler_t , NULL, NULL) < 0)
+  if (swexn(autostack_addr_high, autostack_handler_t , NULL, NULL) < 0)
   {
     SIPRINTF("Cannot register SWEXN handler\n");
     err_num = SWEXN_INSTALL_ERROR;
     return;
   }
 
-  stack_high_ptr = stack_low;
-  stack_low_ptr = exception_stack_base;*/
+}
 
-  void * exception_stack_base= _malloc(EXCEPTION_STACK_SIZE);
+/** @brief deregister automatic stack growth handler 
+ *   
+ *  This function deregisters the handler for automatic stack
+ * growth.
+ *
+ * @param 
+ */
 
-  exception_stack_high = GET_STACK_HIGH((unsigned int)exception_stack_base,EXCEPTION_STACK_SIZE);
+ void deregister_autostack_handler()
+ {
 
-  if (swexn(exception_stack_high, handler_t , NULL, NULL) < 0)
+ 
+  /* De-registering the previous handler */
+  if (swexn(NULL,NULL,NULL,NULL)<0)
   {
-    SIPRINTF("Cannot register SWEXN handler\n");
-    err_num = SWEXN_INSTALL_ERROR;
+    SIPRINTF("Unable to deregister previous handler ");
     return;
   }
 
+  /* Free the exception stack for allocated for automatic stack growth */
+  free(autostack_addr_low);
 
+  SIPRINTF("Handler deregistered successfully");
+
+ }
+
+/** @brief helper function for panic
+ *   
+ *  This function is a helper function for panic.
+ *
+ * @param 
+ */
+char *get_fault_reason(int exception_number)
+{
+  char *buf;
+  switch(exception_number)
+  {
+    case SWEXN_CAUSE_DIVIDE :  
+      buf = "DIVIDE ERROR";
+      break;
+    case SWEXN_CAUSE_DEBUG :
+      buf = "DEBUG ERROR";
+      break;
+    case SWEXN_CAUSE_BREAKPOINT : 
+      buf = "BREAKPOINT ERROR";
+      break;
+    case SWEXN_CAUSE_OVERFLOW :   
+      buf = "OVERFLOW ERROR";
+      break;
+    case SWEXN_CAUSE_BOUNDCHECK :  
+      buf = "BOUNDCHECK ERROR";
+      break;
+    case SWEXN_CAUSE_OPCODE :   
+      buf = "OPCODE ERROR";
+      break;
+    case SWEXN_CAUSE_NOFPU :  
+      buf = "FPU MISSING"; 
+      break;
+    case SWEXN_CAUSE_SEGFAULT :
+      buf = "SEGMENTATION FAULT";
+      break;
+    case SWEXN_CAUSE_STACKFAULT :
+      buf = "STACK FAULT"; 
+      break;
+    case SWEXN_CAUSE_PROTFAULT :  
+      buf = "PROTECTION FAULT";  
+      break;
+    case SWEXN_CAUSE_PAGEFAULT :  
+      buf = "PAGE FAULT";
+      break;
+    case SWEXN_CAUSE_FPUFAULT :   
+      buf = "FPU FAULT";
+      break;
+    case SWEXN_CAUSE_ALIGNFAULT : 
+      buf = "ALIGNMENT ERROR";
+      break;
+    case SWEXN_CAUSE_SIMDFAULT :  
+      buf = "SIMD FAULT";
+      break;
+    default :
+      buf = "UNKNOWN";
+      break;
+  }
+
+  return buf;
 
 }
 

@@ -59,6 +59,7 @@ typedef struct semaphore_thread_object
   struct semaphore_thread_object * next_semaphore_object;
   cond_t cv;
   volatile int count;
+  int max_count;
   mutex_t mutex_lock;
 } semaphore_thread_object;
 

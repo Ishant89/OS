@@ -393,7 +393,7 @@ void cond_signal(cond_t * cv )
 	SIPRINTF("Lock is with tid %d",gettid());
 	/*Pop the first element from the queue*/
 
-	debug_cond_structure();
+	//debug_cond_structure();
 	wait_thread_queue * pop_elem = remove_thread_id_from_wait_queue(
 			&(cond_obj->head_queue));
 
@@ -419,7 +419,7 @@ void cond_signal(cond_t * cv )
 	SIPRINTF("Lock is just released by tid %d",gettid());
 	/*EDIT: */
 
-	debug_cond_structure();
+	//debug_cond_structure();
 
 	SIPRINTF("Exiting cond_signal with cv %d by tid: %d", 
 			(unsigned int) cv,gettid());
@@ -492,7 +492,7 @@ void cond_broadcast(cond_t * cv )
 	/*Pop the first element from the queue*/
 
 	wait_thread_queue * pop_elem;
-	debug_cond_structure();
+	//debug_cond_structure();
    	while((pop_elem 
 				= remove_thread_id_from_wait_queue(&(cond_obj->head_queue)))
 			!=NULL)
@@ -512,7 +512,7 @@ void cond_broadcast(cond_t * cv )
 	SIPRINTF("Lock is just released by tid %d",gettid());
 	/*EDIT: */
 
-	debug_cond_structure();
+	//debug_cond_structure();
 
 	SIPRINTF("Exiting cond_broadcast with cv %d by tid: %d", 
 			(unsigned int) cv,gettid());

@@ -74,6 +74,7 @@ int sem_init(sem_t *sem,int count)
 
   new_sem -> semaphore_id = sem_id;
   new_sem -> count = count;
+  new_sem -> max_count = count;
   SIPRINTF("Sem_init : Initializing mutex %p by tid %d",
                                           &(new_sem -> mutex_lock),gettid());
   mutex_init(&(new_sem -> mutex_lock));
@@ -106,7 +107,7 @@ void sem_wait(sem_t *sem)
   mutex_lock(&(sem_object -> mutex_lock));
 
 
-  if(sem_object -> count <= 0)
+  while(sem_object -> count <= 0)
   {
     
     SIPRINTF("Sem_wait : Going into cond_wait %p by tid %d",
@@ -146,13 +147,18 @@ void sem_signal(sem_t *sem)
 
   if(sem_object -> count <= 0)
   {
-    /* Decrement semaphore count */
+    /* Increment semaphore count */
     (sem_object -> count)++;
     SIPRINTF("Sem_signa; : Incremented count : %d by tid %d",
              sem_object -> count,gettid());
     SIPRINTF("Sem_signal : Signalling and making runnable %d",gettid());
     cond_signal(&(sem_object -> cv));
   }
+
+  else if(sem_object -> count < sem_object -> max_count)
+    /* Increment semaphore count */
+    (sem_object -> count)++;
+
    SIPRINTF("Sem_signal : Release lock by tid %d",gettid());
    mutex_unlock(&(sem_object -> mutex_lock));
    SIPRINTF("Leaving sem_signal by tid %d",gettid());

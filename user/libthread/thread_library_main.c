@@ -23,14 +23,17 @@
 #include <syscall.h>
 #include <stdlib.h>
 #include <simics.h>
-
+#include<autostack.h>
+#include<thread_crash_handler.h>
 
 int thr_init(unsigned int size)
 {
+	mutex_init(&(alloc_lock));
 	mm_init_new_pages(size);
+	deregister_autostack_handler();
 	mutex_init(&(tcb_lock));
 	int flag;
-	/* Stack Size */
+    	/* Stack Size */
 	/* Check if size is multiple of PAGE_SIZE*/ 
 	if ((size % WORD_SIZE)==0)
 	{
@@ -55,6 +58,9 @@ int thr_init(unsigned int size)
 	name->kid = gettid();
 	name->tid = name->kid;
 	name->waiter = -1;
+	name -> crash_handler_sp = (void*)((unsigned int)tcb_mem + TCB_SIZE + STACK_BUFFER + CRASH_HANDLER_STACK_SIZE);
+	/* Install thread crash handler for the parent */
+	install_thread_crash_handler(name -> crash_handler_sp);
 	mutex_init(&(name -> private_lock));
 	cond_init(&(name -> exit_cond));
 	insert_tcb_list(name);
@@ -96,8 +102,10 @@ int thr_create( func handler, void * arg )
 	register tcb name = (tcb) stack_tcb_mem;
 	name -> sp = (void*)((unsigned int)stack_tcb_mem + stack_size + TCB_SIZE);
 	name -> func = handler;
+	name -> creator_tid= gettid();
 	name -> arg = arg;
 	name -> waiter = -1;
+	name -> crash_handler_sp = (void*)((unsigned int)stack_tcb_mem + TCB_SIZE + STACK_BUFFER + stack_size + CRASH_HANDLER_STACK_SIZE);
 	mutex_init(&(name -> private_lock));
 	cond_init(&(name -> exit_cond));
 	/*Create kernel thread */
@@ -105,13 +113,19 @@ int thr_create( func handler, void * arg )
 	/* If child call the handler */
 	if (!pid)
 	{
+		/* Install the thread crash handler */
+		if (install_thread_crash_handler(name -> crash_handler_sp) < 0)
+		{
+			SIPRINTF("Unable to install thread crash handler");
+			return FAIL;
+		}
 		int my_pid = gettid();
 		SIPRINTF("In thr_create and in child :%d",my_pid);
 		int status;
 		while(!(status = check_if_pid_exists_tcb(my_pid)))
 		{
 	    //SIPRINTF("In thr_create : Child TCB found status %d",!status);
-			yield(-1);
+			yield(name->creator_tid);
 		}
 		int result = (int)name->func(name->arg);
 		thr_exit((void *)result);
@@ -170,7 +184,8 @@ int thr_join( int tid, void **statusp)
 
 		while(!isDone(child))
 		{
-			cond_wait(&(child -> exit_cond),&(child -> private_lock));
+			cond_wait(&(child -> exit_cond),&(child -> 
+						private_lock));
 		}
 
 		if(statusp != NULL)
@@ -192,7 +207,8 @@ void thr_exit( void *status )
 
 	SIPRINTF("Entring exit with tid: %d",current->tid);
 
-	mutex_lock(&(current -> private_lock));
+	while(compAndXchg((void *)&(current -> private_lock),0,1));
+	//mutex_lock(&(current -> private_lock));
 
 	current -> exit_status = status;
 
@@ -207,9 +223,10 @@ void thr_exit( void *status )
 
 	SIPRINTF("Exiting thr_exit with tid is : %d",current -> tid);
 
-	mutex_unlock(&(current -> private_lock));
+	//mutex_unlock(&(current -> private_lock));
 
-	vanish();
+	//vanish();
+	vanish_thread_exit(&(current->private_lock));
 }
 
 int thr_yield( int tid )

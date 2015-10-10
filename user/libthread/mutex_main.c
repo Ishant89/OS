@@ -407,7 +407,7 @@ void mutex_unlock(mutex_t *mp)
 
 	SIPRINTF("Lock is just released by tid %d",gettid());
 	/*EDIT: To be removed */
-	debug_mutex_structure();
+	//debug_mutex_structure();
 	/* Free the temp thread queue entry for the popped entry*/
 	SIPRINTF("Exiting mutex unlock id:%d by tid %d",mutex_id,gettid());
 	free(temp);

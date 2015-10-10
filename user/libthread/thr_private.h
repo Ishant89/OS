@@ -1,6 +1,6 @@
 /** @file thr_private.h
  *
- *  @brief This file may be used to define things
+ *  @brief This file is used to define things
  *         internal to the thread library.
  */
 
@@ -11,24 +11,20 @@
 #define THR_PRIVATE
 
 
+typedef void *(*childfunc)(void*) ;
+
 typedef struct tcb   tcb_struct;
 typedef tcb_struct* tcb;
 
-typedef struct threadList children_list;
-
-/** @brief children list */
-
-struct threadList {
-  children_list * next;
-  tcb name;
-};
 
 /** @brief TCB Struct */
 
 struct tcb {
-  void * sp;
+  void *sp;
+  void * crash_handler_sp;
   unsigned int tid;
   unsigned int kid;
+  unsigned int creator_tid;
   struct tcb * next;
   void *(*func)(void*);
   void * arg;
@@ -39,12 +35,19 @@ struct tcb {
   cond_t exit_cond;
 };
 
+
+#define PASS 0
+
+#define FAIL -1
+
 /** @brief word size */
 #define WORD_SIZE 4
 
 #define TCB_SIZE sizeof(tcb_struct)
 
 #define STACK_BUFFER 256
+
+#define CRASH_HANDLER_STACK_SIZE 512
 
 #define TCB_NOT_FOUND NULL
 
@@ -57,6 +60,8 @@ struct tcb {
 unsigned int stack_size;
 
 mutex_t tcb_lock;
+
+mutex_t alloc_lock;
 
 /** @brief Thread fork system call */
 int thread_fork(void *stack);
@@ -79,6 +84,8 @@ void free_child_data_structures(tcb child);
 void remove_tcb_from_list(tcb entry);
 
 void print_tcb_list();
+
+void vanish_thread_exit(mutex_t *lock_addr);
 
 int compAndXchg(void *,int,int);
 

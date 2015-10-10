@@ -26,12 +26,7 @@ int mm_init_new_pages(size_t stack_size)
 {
   mem_base = stack_low_ptr;
   thread_stack_size = stack_size;
-  new_pages_lock = 0;
-  /*if(extend_memory(CHUNKSIZE/WSIZE) == NULL)
-  {
-    err_num = NEW_PAGES_ERROR; 
-    return -1;
-  }*/
+  mutex_init(&new_pages_lock);
 
   freeListSize = EXTEND_PAGE_SIZE;
 
@@ -68,8 +63,7 @@ void * extend_memory(size_t num_words)
 
 void insertFreeBlock(void *bp)
 {
- /* Zero out the contents of the page */
- memset(bp,0,TCB_SIZE + thread_stack_size + STACK_BUFFER);
+ 
  PUTW(freeListHead,bp);
  freeListHead = INCREMENT_HEAD(freeListHead); 
  if(freeListHead == freeListEnd)
@@ -86,9 +80,9 @@ void insertFreeBlock(void *bp)
 
 void * new_pages_malloc()
 {
-  size_t reqd_size = TCB_SIZE + thread_stack_size + STACK_BUFFER;
+  size_t reqd_size = TCB_SIZE + thread_stack_size + STACK_BUFFER + CRASH_HANDLER_STACK_SIZE;
 
-  while(compAndXchg((void *)&(new_pages_lock),0,1));
+  mutex_lock(&new_pages_lock);
   SIPRINTF("Entering new_pages_malloc");
   void *bp = search_free_block_list();
 
@@ -96,24 +90,25 @@ void * new_pages_malloc()
   {
     bp = extend_memory(reqd_size);
     SIPRINTF("Exiting new_pages_malloc by extening memory bp : %p",bp);
-    new_pages_lock = 0;
+    mutex_unlock(&new_pages_lock);
     return bp;
   }
 
   else
   {
     SIPRINTF("Exiting new_pages_malloc bp : %p",bp);
-    new_pages_lock = 0;
+    mutex_unlock(&new_pages_lock);
     return bp;
   }
 }
 
 void free_pages(void *bp)
 {
-  while(compAndXchg((void *)&(new_pages_lock),0,1));
+  mutex_lock(&new_pages_lock);
   SIPRINTF("Entering free pages bp : %p",bp);
+  remove_pages(bp);
   insertFreeBlock(bp);
-  new_pages_lock = 0;
+  mutex_unlock(&new_pages_lock);
   return;
 }
 
@@ -126,6 +121,16 @@ void * search_free_block_list()
   {
     freeListHead = DECREMENT_HEAD(freeListHead);
     void * bp = (void *)GETW(freeListHead);
+    size_t reqd_size = TCB_SIZE + thread_stack_size + STACK_BUFFER + CRASH_HANDLER_STACK_SIZE;
+    reqd_size = ROUND_OFF_PAGE_SIZE(reqd_size);
+
+    if(new_pages(bp,reqd_size) < 0)
+    {
+      SIPRINTF("New pages error in extend_memory\n");
+      err_num = NEW_PAGES_ERROR;
+      return NULL;
+    }
+
     return bp;
   }
 }

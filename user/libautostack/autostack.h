@@ -33,7 +33,7 @@ int err_num;
 void * stack_high_ptr;
 void * stack_low_ptr;
 
-void * exception_stack_high;
+void * autostack_addr_high;
+void * autostack_addr_low;
 
-
-void resume_thread(ureg_t *ureg);
+void deregister_autostack_handler();

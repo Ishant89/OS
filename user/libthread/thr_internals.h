@@ -17,6 +17,9 @@ extern void * stack_low_ptr;
 int thread_fork(void *stack);
 /* unsigned errno codes */
 
+/* helper function for panic */
+char *get_fault_reason(int exception_number);
+
 #define SIZE_NOT_ALIGNED -1
 
 #define SUCCESS 0
