@@ -63,7 +63,7 @@ int install_thread_crash_handler(void *exception_stack)
 	ureg_t * newureg = NULL;
 
 	/*Allocating an exception stack */
-	void * exception_stack = malloc(EXCEPTION_STACK_SIZE);
+	exception_stack = malloc(EXCEPTION_STACK_SIZE);
 
 	SIPRINTF("stack : %p",exception_stack);
 	if (exception_stack == NULL)
