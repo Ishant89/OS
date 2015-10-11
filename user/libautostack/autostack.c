@@ -101,8 +101,7 @@ install_autostack(void *stack_high, void *stack_low)
   /* Install handler */
   if (swexn(autostack_addr_high, autostack_handler_t , NULL, NULL) < 0)
   {
-    SIPRINTF("Cannot register SWEXN handler\n");
-    err_num = SWEXN_INSTALL_ERROR;
+    panic("Cannot register SWEXN handler\n");
     return;
   }
 
@@ -121,9 +120,9 @@ install_autostack(void *stack_high, void *stack_low)
  {
 
   /* De-registering the previous handler */
-  if (swexn(NULL,NULL,NULL,NULL)<0)
+  if (swexn(NULL,NULL,NULL,NULL) < 0)
   {
-    SIPRINTF("Unable to deregister previous handler ");
+    panic("Unable to deregister previous handler ");
     return;
   }
 

@@ -27,8 +27,9 @@
  *  8. In unlock by writer, writer will check if any waiting writer is there
  *  if yes, it will signal writer else it will broadcast readers that they can
  *  take it up
- *  9. In unlock by reader, reader will see if there is any waiting writer, then 
- *  it will signal writer to run else it will broadcast readers to run
+ *  9. In unlock by reader, reader will see if there is any 
+ *  waiting writer, then it will signal writer to run else 
+ *  it will broadcast readers to run
  *
  *  Hence, above design conforms to preventing writer's starvation and enables 
  *  parallel execution of readers	
@@ -133,7 +134,8 @@ int rem_rwlock_object_by_rwlock_id(unsigned int rwlock_id)
 rwlock_thread_object * get_rwlock_object_by_rwlock_id(unsigned int rwlock_id)
 {
 	rwlock_thread_object * temp = NULL;
-	for (temp = head_rwlock_object;temp!=NULL;temp = temp->next_rwlock_object)
+	for (temp = head_rwlock_object;temp!=NULL;
+			temp = temp->next_rwlock_object)
 	{
 		if (temp -> rwlock_id == rwlock_id)
 		{
@@ -295,7 +297,8 @@ void reader_request_handle(rwlock_thread_object * rwlock_identifier)
 	new_thread_request -> next_thread_id = NULL;
 
 
-	add_thread_id_to_queue(&(rwlock_identifier->head_queue),new_thread_request);
+	add_thread_id_to_queue(&(rwlock_identifier->head_queue),
+			new_thread_request);
 	mutex_unlock(&(rwlock_identifier->global_lock));
 }
 /** @brief handle writeer request
@@ -331,7 +334,8 @@ void writer_request_handle(rwlock_thread_object * rwlock_identifier)
 	new_thread_request -> next_thread_id = NULL;
 
 
-	add_thread_id_to_queue(&(rwlock_identifier->head_queue),new_thread_request);
+	add_thread_id_to_queue(&(rwlock_identifier->head_queue),
+			new_thread_request);
 /* Unlock */
 	mutex_unlock(&(rwlock_identifier->global_lock));
 }

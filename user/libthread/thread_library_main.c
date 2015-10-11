@@ -123,13 +123,16 @@ int thr_create( func handler, void * arg )
 	 * and the following tcb is for newly thread created as follows
 	 */
 	register tcb name = (tcb) stack_tcb_mem;
-	name -> sp = (void*)((unsigned int)stack_tcb_mem + stack_size + TCB_SIZE);
+	name -> sp = (void*)((unsigned int)stack_tcb_mem + 
+		                    stack_size + TCB_SIZE);
 	name -> func = handler;
 	name -> creator_tid= gettid();
 	name -> arg = arg;
 	name -> waiter = -1;
 	name -> crash_handler_sp = (void*)((unsigned int)stack_tcb_mem + 
-			TCB_SIZE + STACK_BUFFER + stack_size + CRASH_HANDLER_STACK_SIZE);
+			                                TCB_SIZE + STACK_BUFFER + 
+			                                stack_size +
+		                                  CRASH_HANDLER_STACK_SIZE);
 	/*Create kernel thread */
 	int pid = thread_fork(name->sp);
 	/* If child call the handler */
@@ -188,7 +191,8 @@ int thr_join( int tid, void **statusp)
 
 	if(child == NULL)
 	{
-		panic("Exiting join with error : Cannot find child TCB %d in join",tid);
+		panic("Exiting join with error : Cannot find child TCB %d in join",
+			    tid);
 		return FAIL;
 	}
 

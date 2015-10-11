@@ -186,8 +186,9 @@ void mutex_lock(mutex_t * mp)
 	 * about to deschedule and another thread in mutex_unlock about to make 
 	 * current thread runnable. 
 	 *
-	 * Race scenario: Thread is not descheduled but other thread is trying to
-	 * make it runnable which will fail and current thread will deschedule. 
+	 * Race scenario: Thread is not descheduled but 
+	 * other thread is trying to make it runnable which will fail and
+	 * current thread will deschedule. 
 	 * This will lead to deadlock. E.g.:
 	 * 1. Thread A is about to deschedule
 	 * 2. Thread B made A runnable 
@@ -200,14 +201,16 @@ void mutex_lock(mutex_t * mp)
 	 * This can lead to another race where make_runnable by thread B 
 	 * (next instruction after the reject flag is set,
 	 * can awake  the same thread A when it is trying to take the lock for 
-	 * different mutex but it is supposed to be descheduled as per expectation. 
+	 * different mutex but it is supposed to be descheduled 
+	 * as per expectation. 
 	 * This is prevented by checking that current thread 
 	 * id should be the owner of the lock otherwise it gets stuck 
 	 * in the following loop.
 	 * 
 	 * For any thread to exit the following loop:
 	 * 1.set the reject flag, 
-	 * 2.Make_runnable should succeed or fail(should not create spurious wake)
+	 * 2.Make_runnable should succeed or fail
+	 * (should not create spurious wake)
 	 * 3.set the lock_owner to itself (i.e thread A)
 	 * all above things should be done by thread B in mutex_unlock
 	 *
@@ -313,7 +316,8 @@ void mutex_destroy(mutex_t *mp)
 	if (mutex_identifier-> lock_owner !=-1 ||
 			mutex_identifier-> head_queue != NULL)
 	{
-		panic("Terminating : Either lock is nt released or elements are there\n");
+		panic("Terminating : Either lock is nt \
+				released or elements are there\n");
 		/* Change status to macro */
 		task_vanish(KILL_STATUS);
 	}

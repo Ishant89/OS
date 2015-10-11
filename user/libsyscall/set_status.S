@@ -1,5 +1,11 @@
-/* @file set_status.S 
+/** @file set_status.S
+ *  @brief Stub file for set_status
  *
+ *  This is a stub library for set_status syscall
+ *
+ *  @author Shelton Dsouza (sdsouza)
+ *
+ *  @bug No known bugs
  */
 
 #include <syscall_int.h>

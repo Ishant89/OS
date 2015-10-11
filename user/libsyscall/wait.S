@@ -15,7 +15,7 @@
 wait:
   push %ebp /*Save previous frame ptr*/
   mov %esp,%ebp
-  push %esi /* Save esi as it is calledd saved */
+  push %esi /* Save esi as it is called saved */
   movl 8(%ebp),%esi /* Get the status pointer */
   movl $0x00,%eax
   int $WAIT_INT

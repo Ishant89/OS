@@ -1,5 +1,11 @@
-/* @file misbehave.S
+/** @file misbehave.S
+ *  @brief Stub file for misbehave
  *
+ *  This is a stub library for misbehave syscall
+ *
+ *  @author Shelton Dsouza (sdsouza)
+ *
+ *  @bug No known bugs
  */
 
 #include <syscall_int.h>

@@ -87,7 +87,7 @@ UPDATE_METHOD = afs
 #
 410TESTS = switzerland startle actual_wait thr_exit_join stack_test1 cyclone join_specific_test wild_test1 bistromath juggle racer \
 	paraguay cvar_test beady_test agility_drill mandelbrot multitest nibbles rwlock_downgrade_read_test largetest mutex_destroy_test \
-	misbehave_wrap excellent test_cvar
+	misbehave_wrap excellent test_cvar cat getpid_test1 halt_test
 ###########################################################################
 # Test programs you have written which you wish to run
 ###########################################################################
@@ -117,7 +117,7 @@ THREAD_OBJS = malloc.o panic.o thread_fork.o thread_library_main.o mutex_main.o 
 ###########################################################################
 # Object files for your syscall wrappers
 ###########################################################################
-SYSCALL_OBJS = syscall.o set_status.o vanish.o print.o getchar.o set_term_color.o \
+SYSCALL_OBJS = set_status.o vanish.o print.o getchar.o set_term_color.o \
 			   set_cursor_pos.o get_cursor_pos.o readline.o task_vanish.o wait.o exec.o fork.o \
 			   gettid.o yield.o deschedule.o make_runnable.o get_ticks.o sleep.o new_pages.o \
 			   remove_pages.o swexn.o misbehave.o halt.o readfile.o
@@ -125,5 +125,5 @@ SYSCALL_OBJS = syscall.o set_status.o vanish.o print.o getchar.o set_term_color.
 ###########################################################################
 # Object files for your automatic stack handling
 ###########################################################################
-AUTOSTACK_OBJS = autostack.o resume_thread.o
+AUTOSTACK_OBJS = autostack.o 
 

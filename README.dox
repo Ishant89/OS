@@ -76,6 +76,158 @@
         performed between the lock release and making the call to vanish now, 
         problem 1 is solved.
 
+----------------------------------Mutex_main.c(Mutex library)------------------------
+
+A. Mutex_lock flow : 
+   Mutex is implemented using FIFO queue to support  bounded waiting 
+   Flow for threads calling mutex_lock is as follows:
+   
+   1). Threads entering mutex_lock will check first if unlocking is set by any 
+thread in mutex_unlock section (or thread having lock and about to release lock 
+)
+   2). If unlock is set, all threads will not try to acquire queue lock and will
+let thread with lock to access the queue and leave the lock for others
+   
+   3). This mechanism will help thread with lock with no or minimum waiting
+  
+   4). Threads will acquire the queue lock to get to the mutex lock
+
+   5). After acquiring the queue lock, threads will enter the critical section 
+of mutex_lock
+  
+	6). In critical section, thread will check if lock is available 
+	
+	7). If lock is available, thread will acquire it and will set the lock
+owner to itself
+	
+	8). Otherwise, it will append itself to the waiting queue 
+	
+	9). Thread will leave the queue lock and deschedule itself
+	
+	10). before descheduling, releasing the lock there is a race which is as 
+follows:
+ 
+RACE: 
+
+Threads may deschedule itself after adding to the queue but thread in
+the mutex_unlock section will try make the thread runnable which is not 
+scheduled. 
+	
+Solution: 
+
+To avoid this race, threads in mutex_unlock section will transfer 
+the lock ownership to the element at the head of the queue and will set the 
+reject flag to 1 in case thread A(in the mutex_lock section) is not descheduled
+yet. This will help thread A not to deschedule. This will lead to another 
+problem of spurious wake ups
+	
+Spurious wakeups problem: 
+
+Lets consider above scenario and thread A is about 
+to deschedule but not yet descheduled. Thread B in unlock section transfers the 
+ownership to Thread A and sets the reject flag. The make runnable instruction 
+which will be run by thread Bcan lead to spurious wakeup of thread A when 
+thread A is trying to acquire lock again for the different mutex object. 
+
+Solution to above problem:
+
+In mutex_lock, threads will only get the lock once the ownership is transferred 
+completely by the previous thread and this check is in the while loop 
+surrounding deschedule in the mutex_main.c:220 makes the thread to execute 
+deschedule instruction and thread A will deschedule based on the reject flag.
 
 
+MUTEX_UNLOCK:
+
+1. Thread in mutex_unlock will register its interest to acquire queue lock 
+2. Other threads trying to enter into run for mutex lock will stop and yield to
+the one with the lock.
+3. After taking the queue lock, thread will pop the thread element from top of 
+the queue and transfer the ownership of the lock to popped element.
+4. Thread will set the reject flag of the new thread to the popped element
+5. Thread will make the new thread runnable
+6. If queue is null, thread will simply release the lock.
+
+----------------------------------Convars(cvar_main.c)---------------------
+
+Condition variables are also implemented using FIFO queue 
+
+1. Cond_wait:
+	-Threads will contend for the queue lock
+	- Thread will add itslef to the queue 
+	- Thread will release the global lock and deschedule itself
+	- Thread will release the queue lock before descheduling
+	- After wakeup, thread will take up the global lock
+2. Cond_signal : 
+	- Will acquire the queue lock 
+	- will dequeue one elem
+	- will make it runnable 
+	- will release the lock 
+3. Cond_broadcast: 
+	- will dequeue all elements in queue 
+
+-------------------------------Semaphores (semaphore_main.c)----------------
+
+Semaphores are built using one mutex_lock and one condvariable object which 
+are explained above 
+
+Refer code comments for more information
+
+-----------------------------Rwlock (rwlock_main.c)------------------------
+Rwlock implementation : following datastructures are required 
+1. mutex lock for queue 
+2. condvar for readers 
+3. condvar for writers
+4. active readers count 
+5. active writers count
+6. waiting writers count
+
+General flow of the rwlock is as follows (insight):
+   1. Lets consider 5 readers come and no writer is running
+   2. All readers will check if there is no writer waiting 
+   3. If yes, all will take the lock and will execute
+   4. While all readers share the lock and are executing, if any 
+   writer comes
+   5. Writer will announce and increase its waitcount so that next set
+   of readers are blocked 
+   6. Writer will check if no other writer is not running and has the lock
+   and no other reads are running after it announced its interest
+   7. Once writer will take charge, waitcnt is reduced by 1 and if at all 
+   other writers come, they will raise their raise count and gets blocked
+   and same is true with readers
+   8. In unlock by writer, writer will check if any waiting writer is there
+   if yes, it will signal writer else it will broadcast readers that they can
+   take it up
+   9. In unlock by reader, reader will see if there is any waiting writer, then 
+   it will signal writer to run else it will broadcast readers to run
+ 
+  Hence, above design conforms to preventing writer's starvation and enables 
+  parallel execution of readers	
+
+rwlock_lock:
+Type is reader : 
+   1. It waits using cond_wait if there are any active  or waiting writers 
+or if writer is not yet downgraded  
+   2. After waking up by writers, it increments the readcnt as reader is
+   active
+   3. Adds itself to the queue 
+
+Type is writer:
+   1. It waits using cond_wait if 
+   there are any active readers or active writers 
+   2. After waking up by writer, it increments the  active writecnt 
+   as writer is active
+   3. Adds itself to the queue 
+
+
+rwlock_unlock:
+   1. It checks the type of the head of the queue
+   2. It decrements the active count (readcnt or writecnt)
+   3. If there is writer waiting, signal writer
+   4. Else broadcast to readers to run
+
+rwlock_downgrade:
+   1. It checks if reader is downgrading or not
+   2. It checks if it is already downgraded
+   3. Once downgraded, it broadcasts to readers to run
 */
