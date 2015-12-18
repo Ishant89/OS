@@ -1,0 +1,133 @@
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/cvar_private.h:1: warning: the name `cvar_private.c' supplied as the second argument in the \file statement is not an input file
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mm_new_pages.c:1: warning: the name `mm.c' supplied as the second argument in the \file statement is not an input file
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libautostack/autostack.c:110: warning: argument 'None' of command @param is not found in the argument list of deregister_autostack_handler()
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libautostack/autostack.c:134: warning: argument 'exception' of command @param is not found in the argument list of get_fault_reason(int exception_number)
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libautostack/autostack.c:134: warning: The following parameters of get_fault_reason(int exception_number) are not documented:
+  parameter 'exception_number'
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/compAndXchg.h:10: warning: Member compAndXchg(void *, int, int) (function) of file compAndXchg.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mm_new_pages.h:18: warning: Member WORD_SIZE (macro definition) of file mm_new_pages.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mm_new_pages.h:20: warning: Member EXTEND_PAGE_SIZE (macro definition) of file mm_new_pages.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mm_new_pages.h:22: warning: Member GET_FREE_LIST_END(start, size) (macro definition) of file mm_new_pages.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mm_new_pages.h:24: warning: Member ROUND_OFF_PAGE_SIZE(val) (macro definition) of file mm_new_pages.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mm_new_pages.h:26: warning: Member GET_EXTENDED_STACK_SIZE(bp, val) (macro definition) of file mm_new_pages.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mm_new_pages.h:28: warning: Member GET_STACK_BASE_ADDRESS(bp, val) (macro definition) of file mm_new_pages.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mm_new_pages.h:30: warning: Member PUTW(p, val) (macro definition) of file mm_new_pages.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mm_new_pages.h:32: warning: Member INCREMENT_HEAD(bp) (macro definition) of file mm_new_pages.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mm_new_pages.h:34: warning: Member DECREMENT_HEAD(bp) (macro definition) of file mm_new_pages.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mm_new_pages.h:36: warning: Member INCREMENT_HEAD_BY_SIZE(bp, size) (macro definition) of file mm_new_pages.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mm_new_pages.h:38: warning: Member GETW(bp) (macro definition) of file mm_new_pages.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mm_new_pages.h:15: warning: Member size_t (typedef) of file mm_new_pages.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mm_new_pages.h:41: warning: Member mem_base (variable) of file mm_new_pages.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mm_new_pages.h:44: warning: Member thread_stack_size (variable) of file mm_new_pages.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mm_new_pages.h:47: warning: Member freeListHead (variable) of file mm_new_pages.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mm_new_pages.h:50: warning: Member freeListStart (variable) of file mm_new_pages.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mm_new_pages.h:53: warning: Member freeListEnd (variable) of file mm_new_pages.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mm_new_pages.h:56: warning: Member err_num (variable) of file mm_new_pages.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mm_new_pages.h:59: warning: Member new_pages_lock (variable) of file mm_new_pages.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mm_new_pages.h:62: warning: Member freeListSize (variable) of file mm_new_pages.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mm_new_pages.c:159: warning: argument 'bp' of command @param is not found in the argument list of search_free_block_list()
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mutex_main.c:19: warning: argument 'queue_elem' of command @param is not found in the argument list of append_thread_id_to_queue(thread_queue **queue_head, thread_queue *last_elem)
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mutex_main.c:19: warning: The following parameters of append_thread_id_to_queue(thread_queue **queue_head, thread_queue *last_elem) are not documented:
+  parameter 'last_elem'
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mutex_main.c:73: warning: argument 'mutex_t' of command @param is not found in the argument list of mutex_init(mutex_t *mp)
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mutex_main.c:73: warning: The following parameters of mutex_init(mutex_t *mp) are not documented:
+  parameter 'mp'
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mutex_main.c:104: warning: argument 'mutex_t' of command @param is not found in the argument list of mutex_lock(mutex_t *mp)
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mutex_main.c:104: warning: The following parameters of mutex_lock(mutex_t *mp) are not documented:
+  parameter 'mp'
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mutex_main.c:228: warning: argument 'mutex_t' of command @param is not found in the argument list of mutex_unlock(mutex_t *mp)
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mutex_main.c:228: warning: The following parameters of mutex_unlock(mutex_t *mp) are not documented:
+  parameter 'mp'
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mutex_main.c:52: warning: argument 'queue' of command @param is not found in the argument list of remove_thread_id_from_queue(thread_queue **queue_head)
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mutex_main.c:52: warning: The following parameters of remove_thread_id_from_queue(thread_queue **queue_head) are not documented:
+  parameter 'queue_head'
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mutex_private.h:27: warning: Member FAIL (macro definition) of file mutex_private.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mutex_private.h:28: warning: Member KILL_STATUS (macro definition) of file mutex_private.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mutex_private.h:34: warning: Member compAndXchg(void *, int, int) (function) of file mutex_private.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mutex_main.c:73: warning: argument 'mutex_t' of command @param is not found in the argument list of mutex_init(mutex_t *mp)
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mutex_main.c:73: warning: The following parameters of mutex_init(mutex_t *mp) are not documented:
+  parameter 'mp'
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mutex_main.c:104: warning: argument 'mutex_t' of command @param is not found in the argument list of mutex_lock(mutex_t *mp)
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mutex_main.c:104: warning: The following parameters of mutex_lock(mutex_t *mp) are not documented:
+  parameter 'mp'
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mutex_main.c:228: warning: argument 'mutex_t' of command @param is not found in the argument list of mutex_unlock(mutex_t *mp)
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/mutex_main.c:228: warning: The following parameters of mutex_unlock(mutex_t *mp) are not documented:
+  parameter 'mp'
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/rwlock_private.h:31: warning: Member FAIL (macro definition) of file rwlock_private.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/rwlock_private.h:33: warning: Member READ (macro definition) of file rwlock_private.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/rwlock_private.h:34: warning: Member WRITE (macro definition) of file rwlock_private.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/rwlock_private.h:35: warning: Member KILL_STATUS (macro definition) of file rwlock_private.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/semaphore_private.h:33: warning: Member FAILURE (macro definition) of file semaphore_private.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/semaphore_private.h:34: warning: Member KILL_STATUS (macro definition) of file semaphore_private.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/thr_internals.h:28: warning: Member SIZE_NOT_ALIGNED (macro definition) of file thr_internals.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/thr_internals.h:30: warning: Member SUCCESS (macro definition) of file thr_internals.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/thr_internals.h:31: warning: Member ERROR (macro definition) of file thr_internals.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/thr_internals.h:35: warning: Member SIPRINTF(...) (macro definition) of file thr_internals.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/thr_internals.h:42: warning: Member ISPRINTF(...) (macro definition) of file thr_internals.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/thr_internals.h:23: warning: Member thread_fork(void *stack) (function) of file thr_internals.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/thr_internals.h:21: warning: Member alloc_lock (variable) of file thr_internals.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libautostack/autostack.c:134: warning: argument 'exception' of command @param is not found in the argument list of get_fault_reason(int exception_number)
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libautostack/autostack.c:134: warning: The following parameters of get_fault_reason(int exception_number) are not documented:
+  parameter 'exception_number'
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/thr_private.h:65: warning: Member setDone(t) (macro definition) of file thr_private.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/thr_private.h:66: warning: Member isDone(t) (macro definition) of file thr_private.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/thr_private.h:17: warning: Member func)(void *) (typedef) of file thr_private.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/thr_private.h:17: warning: Member tcb_struct (typedef) of file thr_private.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/thr_private.h:20: warning: Member tcb (typedef) of file thr_private.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/thr_private.h:96: warning: Member vanish_thread_exit(int *lock_addr) (function) of file thr_private.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/thr_private.h:98: warning: Member compAndXchg(void *, int, int) (function) of file thr_private.h is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/thread_library_main.c:484: warning: argument 'tcb' of command @param is not found in the argument list of free_child_data_structures(tcb child)
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/thread_library_main.c:484: warning: The following parameters of free_child_data_structures(tcb child) are not documented:
+  parameter 'child'
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/thread_crash_handler.c:18: warning: Member EXCEPTION_STACK_SIZE (macro definition) of file thread_crash_handler.c is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/thread_crash_handler.c:19: warning: Member FAIL (macro definition) of file thread_crash_handler.c is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/thread_crash_handler.c:20: warning: Member PASS (macro definition) of file thread_crash_handler.c is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/thread_library_main.c:484: warning: argument 'tcb' of command @param is not found in the argument list of free_child_data_structures(tcb child)
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/thread_library_main.c:484: warning: The following parameters of free_child_data_structures(tcb child) are not documented:
+  parameter 'child'
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/thread_library_main.c:90: warning: argument 'func' of command @param is not found in the argument list of thr_create(func handler, void *arg)
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/thread_library_main.c:90: warning: The following parameters of thr_create(func handler, void *arg) are not documented:
+  parameter 'handler'
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/thread_library_main.c:323: warning: argument 'void' of command @param is not found in the argument list of thr_getid(void)
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/inc/cond_type.h:18: warning: Member cond_lock (variable) of class cond is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/inc/cond_type.h:19: warning: Member head_queue (variable) of class cond is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/inc/cond_type.h:20: warning: Member mutex_object (variable) of class cond is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/inc/mutex_type.h:28: warning: Member head_queue (variable) of class mutex is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/inc/mutex_type.h:30: warning: Member lock (variable) of class mutex is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/inc/mutex_type.h:32: warning: Member lock_owner (variable) of class mutex is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/inc/mutex_type.h:34: warning: Member unlock_flag (variable) of class mutex is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/inc/rwlock_type.h:11: warning: Member rwlock_id (variable) of class rwlock is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/rwlock_private.h:67: warning: Member rwlock_id (variable) of class rwlock_thread_object is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/rwlock_private.h:69: warning: Member global_lock (variable) of class rwlock_thread_object is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/rwlock_private.h:71: warning: Member read_cond (variable) of class rwlock_thread_object is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/rwlock_private.h:73: warning: Member write_cond (variable) of class rwlock_thread_object is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/rwlock_private.h:75: warning: Member readcnt (variable) of class rwlock_thread_object is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/rwlock_private.h:78: warning: Member writecnt (variable) of class rwlock_thread_object is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/rwlock_private.h:80: warning: Member wait_writecnt (variable) of class rwlock_thread_object is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/rwlock_private.h:82: warning: Member downgrade_id (variable) of class rwlock_thread_object is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/rwlock_private.h:84: warning: Member head_queue (variable) of class rwlock_thread_object is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/rwlock_private.h:86: warning: Member next_rwlock_object (variable) of class rwlock_thread_object is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/inc/sem_type.h:24: warning: Member cv (variable) of class sem is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/inc/sem_type.h:26: warning: Member count (variable) of class sem is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/inc/sem_type.h:28: warning: Member max_count (variable) of class sem is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/inc/sem_type.h:30: warning: Member mutex_lock (variable) of class sem is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/thr_private.h:26: warning: Member sp (variable) of class tcb is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/thr_private.h:27: warning: Member crash_handler_sp (variable) of class tcb is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/thr_private.h:28: warning: Member tid (variable) of class tcb is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/thr_private.h:29: warning: Member kid (variable) of class tcb is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/thr_private.h:30: warning: Member creator_tid (variable) of class tcb is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/thr_private.h:31: warning: Member next (variable) of class tcb is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/thr_private.h:32: warning: Member func)(void *) (variable) of class tcb is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/thr_private.h:33: warning: Member status (variable) of class tcb is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/thr_private.h:34: warning: Member arg (variable) of class tcb is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/thr_private.h:35: warning: Member exit_status (variable) of class tcb is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/thr_private.h:36: warning: Member waiter (variable) of class tcb is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/thr_private.h:37: warning: Member private_lock (variable) of class tcb is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/inc/mutex_type.h:11: warning: Member thread_id (variable) of class thread_queue is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/inc/mutex_type.h:13: warning: Member reject (variable) of class thread_queue is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/inc/mutex_type.h:15: warning: Member next_thread_id (variable) of class thread_queue is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/rwlock_private.h:45: warning: Member thread_id (variable) of class thread_queue_rwlock is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/rwlock_private.h:47: warning: Member type (variable) of class thread_queue_rwlock is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/libthread/rwlock_private.h:49: warning: Member next_thread_id (variable) of class thread_queue_rwlock is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/inc/cond_type.h:11: warning: Member thread_id (variable) of class wait_thread_queue is not documented.
+/afs/andrew.cmu.edu/usr2/idawer/OS/Operating-System/project_2/OS/user/inc/cond_type.h:13: warning: Member next_wait_thread (variable) of class wait_thread_queue is not documented.
